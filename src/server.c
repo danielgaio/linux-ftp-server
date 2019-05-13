@@ -8,12 +8,14 @@
 #include <string.h>
 #include "header.h"
 #define PORT 21
+
 int start_server() {
 	int server_fd,new_socket;
 	struct sockaddr_in address;
 	int opt = 1;
 	int addrlen = sizeof(address);
 	//char buffer[1024] = {0};
+
 	// Creating socket file descriptor
 	if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
 		perror("socket failed");
@@ -30,7 +32,7 @@ int start_server() {
 	address.sin_addr.s_addr = INADDR_ANY;
 	address.sin_port = htons( PORT );
 
-	// Forcefully attaching socket to the port 8080
+	// Forcefully attaching socket to the port 21
 	if (bind(server_fd, (struct sockaddr *)&address, sizeof(address))<0) {
 		perror("bind failed");
 		exit(EXIT_FAILURE);
@@ -60,8 +62,9 @@ char* pegaValor(int new_socket){
   char buffer[1024] = {0};
 	int valread = read(new_socket ,buffer, 1024);
 	//printf("%s\n",buffer );
-	return buffer;
+	return &buffer;
 }
+
 void  enviarValor(int new_socket, char *hello){
 	send(new_socket , hello , strlen(hello) , 0 );
 //	printf("Hello message sent\n");
@@ -78,6 +81,7 @@ int qtd_espacos(char *str){
     }
     return espacos;
 }
+
 char* quebrarString (char *str){
 	int qtd_strings = qtd_espacos(str) + 1, i = 0;
 	char strings[qtd_strings][strlen(str)];
