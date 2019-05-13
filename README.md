@@ -2,11 +2,11 @@ linux ftp server
 
 
 
-iniciar Servidor
-g++ main.cpp header.h server.c -o server
+iniciar Servidor <br>
+g++ main.cpp header.h server.c -o server <br>
 ./server
 
 
-inicial Cleinte
-g++ client.c -o client
+inicial Cleinte <br>
+g++ client.c -o client <br>
 ./client
