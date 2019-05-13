@@ -1,8 +1,11 @@
-#include <stdio.h>
 #include <netdb.h> // sockets
+#include "header.h"
 
 int main(){
 
+    if(start_server() != 0) printf("Erro ao atender cliente!\n"); else printf("Servidor atendeu cliente com sucesso!\n");
+
+    /*
     int server_socket, conecta;
 
     struct sockaddr_in alvo; // sockaddr_in vem de netdb.h
@@ -21,6 +24,7 @@ int main(){
     }else{
         printf("Porta fechada\n");
     }
+    */
 
     return 0;
 }
