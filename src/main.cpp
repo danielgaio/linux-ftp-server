@@ -9,32 +9,46 @@ int main(){
     char *bufferDividido;
     int variavel=1;
     int ordem=0;
-
-    if(new_socket!=0)
+    char *vetor[5];
+    if(new_socket==0)
         printf("Erro ao atender cliente!\n");
     else{
         printf("Servidor atendeu cliente com sucesso!\n");
         while (variavel==1){
           enviarValor(new_socket,"220");
           buffer=pegaValor(new_socket);
+          bufferDividido=quebrarString(buffer);
+          printf("%s\n",bufferDividido[0]);
+          printf("%s\n",bufferDividido[1]);
+
+
+
+
+
+          /*
           bufferDividido =strtok (buffer," ");
-          if(ordem=0 && bufferDividido[0]="USER" && bufferDividido[1]="anonymous"){
+          printf("%s\n",bufferDividido );
+
+        /*  if(ordem=0 && strcmp(bufferDividido,"USER")==0 && strcmp(bufferDividido,"anonymous")==0 ){
               enviarValor(new_socket,"331");
               buffer=pegaValor(new_socket);
+              bufferDividido =strtok (buffer," ");
               ordem=1;
             }
-          elif(ordem=1 && bufferDividido[0]="PASS" && bufferDividido[1]=""){
+          else if(ordem=1 && strcmp(bufferDividido,"PASS")==0 && strcmp(bufferDividido,"")==0 ){
                   enviarValor(new_socket,"230");
                   buffer=pegaValor(new_socket);
+                  bufferDividido =strtok (buffer," ");
                   ordem=2;
           }
-          elif(ordem=2 && bufferDividido[0]="PASS" && bufferDividido[1]=""){
+          else if(ordem=2 &&  strcmp(bufferDividido,"PASS")==0 &&  strcmp(bufferDividido,"")==0){
                   enviarValor(new_socket,"331");
                   buffer=pegaValor(new_socket);
+                  bufferDividido =strtok (buffer," ");
                   ordem=2;
           }
-
-
+*/
+          variavel=2;
         }
 
 

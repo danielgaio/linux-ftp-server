@@ -8,7 +8,6 @@
 #include <string.h>
 #include "header.h"
 #define PORT 21
-
 int start_server() {
 	int server_fd,new_socket;
 	struct sockaddr_in address;
@@ -57,14 +56,35 @@ int start_server() {
 	return new_socket;
 }
 
-char *pegaValor(int new_socket){
-  char *buffer[1024] = {0};
+char* pegaValor(int new_socket){
+  char buffer[1024] = {0};
 	int valread = read(new_socket ,buffer, 1024);
-	printf("%s\n",buffer );
-	return *buffer;
+	//printf("%s\n",buffer );
+	return buffer;
 }
 void  enviarValor(int new_socket, char *hello){
 	send(new_socket , hello , strlen(hello) , 0 );
-	printf("Hello message sent\n");
+//	printf("Hello message sent\n");
 
+}
+
+int qtd_espacos(char *str){
+    int espacos = 0;
+    while(str){
+        if (strcmp(str," ")==0){
+           espacos++;
+        }
+        str++;
+    }
+    return espacos;
+}
+char* quebrarString (char *str){
+	int qtd_strings = qtd_espacos(str) + 1, i = 0;
+	char strings[qtd_strings][strlen(str)];
+	char *pch = strtok (str," ");
+	while (pch != NULL){
+			strcpy(strings[i++], pch); //copiar cada string para a posição correta
+			pch = strtok (NULL, " ");
+	}
+	return *strings;
 }
