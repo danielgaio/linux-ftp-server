@@ -47,7 +47,7 @@ int main(int argc, char const *argv[]) {
 	printf("%s\n",buffer );
 
 ///Primeiro comando USER
-char *hello = "USER ";
+hello = "USER ";
 
 send(sock , hello , strlen(hello) , 0 );
 printf("Hello message sent\n");

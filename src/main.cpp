@@ -10,25 +10,29 @@ int main(){
     hello = (char*)malloc(sizeof(char)*5);
     new_socket = start_server();
     char *buffer;
-    buffer = (char*)malloc(sizeof(char)*50);
+    //buffer = (char*)malloc(sizeof(char)*50);
     char *bufferDividido;
-    bufferDividido = (char*)malloc(sizeof(char)*50);
+    //bufferDividido = (char*)malloc(sizeof(char)*50);
     int variavel = 1;
     int ordem = 0;
     char *vetor;
     vetor = (char*)malloc(sizeof(char)*50);
 
-    if(start_server() != 0){
+    if(new_socket== 0){
         perror("Erro ao atender cliente!\n");
-        exit(EXIT_FAILURE); 
+        exit(EXIT_FAILURE);
     }else{
         printf("Servidor atendeu cliente com sucesso!\n");
         while (variavel == 1){
           enviarValor(new_socket,"220");
-          buffer = (char*)pegaValor(new_socket);
-          bufferDividido = quebrarString(buffer);
-          printf("%i\n", bufferDividido[0]);
-          printf("%i\n", bufferDividido[1]);
+          buffer=pegaValor(new_socket);
+          printf("%s",&buffer);
+
+          //bufferDividido= strtok(buffer," ");
+        //  bufferDividido = quebrarString(buffer);
+        //  bufferDividido = strtok(buffer," ");
+          //printf("%s\n", &bufferDividido);
+        //  printf("%s\n", bufferDividido);
 
 
 

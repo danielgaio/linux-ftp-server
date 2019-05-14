@@ -46,6 +46,7 @@ int start_server() {
 	if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen))<0) {
 		perror("accept");
 		exit(EXIT_FAILURE);
+
 	}
 
 
@@ -58,11 +59,10 @@ int start_server() {
 	return new_socket;
 }
 
-char* pegaValor(int new_socket){
+char *pegaValor(int new_socket){
   char buffer[1024] = {0};
 	int valread = read(new_socket ,buffer, 1024);
-	//printf("%s\n",buffer );
-	return &buffer;
+	return (char *) buffer;
 }
 
 void  enviarValor(int new_socket, char *hello){
@@ -70,7 +70,7 @@ void  enviarValor(int new_socket, char *hello){
 //	printf("Hello message sent\n");
 
 }
-
+/*
 int qtd_espacos(char *str){
     int espacos = 0;
     while(str){
@@ -92,3 +92,4 @@ char* quebrarString (char *str){
 	}
 	return *strings;
 }
+*/
