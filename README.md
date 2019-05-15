@@ -3,7 +3,7 @@ linux ftp server
 
 
 iniciar Servidor <br>
-g++ main.cpp header.h server.c -o server <br>
+gcc main.c header.h server.c -o server <br>
 ./server
 
 
