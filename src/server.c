@@ -46,7 +46,6 @@ int start_server() {
 	if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen))<0) {
 		perror("accept");
 		exit(EXIT_FAILURE);
-
 	}
 
 
@@ -58,19 +57,17 @@ int start_server() {
 
 	return new_socket;
 }
-
-char *pegaValor(int new_socket){
-  char buffer[1024] = {0};
+char * pegaValor(int new_socket, char *buffer){
+  //char buffer[1024] = {0};
+	//char *buffer=(char*)malloc(sizeof(char)*1024);
 	int valread = read(new_socket ,buffer, 1024);
-	return (char *) buffer;
+	return buffer;
 }
-
 void  enviarValor(int new_socket, char *hello){
 	send(new_socket , hello , strlen(hello) , 0 );
 //	printf("Hello message sent\n");
-
 }
-/*
+
 int qtd_espacos(char *str){
     int espacos = 0;
     while(str){
@@ -84,7 +81,7 @@ int qtd_espacos(char *str){
 
 char* quebrarString (char *str){
 	int qtd_strings = qtd_espacos(str) + 1, i = 0;
-	char strings[qtd_strings][strlen(str)];
+	char **ponteiro = new char*[qtd_strings];
 	char *pch = strtok (str," ");
 	while (pch != NULL){
 			strcpy(strings[i++], pch); //copiar cada string para a posição correta
@@ -92,4 +89,3 @@ char* quebrarString (char *str){
 	}
 	return *strings;
 }
-*/

@@ -9,8 +9,7 @@ int main(){
     char *hello = (char*)"ola";
     hello = (char*)malloc(sizeof(char)*5);
     new_socket = start_server();
-    char *buffer;
-    //buffer = (char*)malloc(sizeof(char)*50);
+    char *buffer = (char*)malloc(sizeof(char)*1024);
     char *bufferDividido;
     //bufferDividido = (char*)malloc(sizeof(char)*50);
     int variavel = 1;
@@ -25,11 +24,13 @@ int main(){
         printf("Servidor atendeu cliente com sucesso!\n");
         while (variavel == 1){
           enviarValor(new_socket,"220");
-          buffer=pegaValor(new_socket);
-          printf("%s",&buffer);
+          buffer=pegaValor(new_socket, buffer);
+          printf("%s\n",buffer);
+          bufferDividido = quebrarString(buffer);
+          printf("%s\n", bufferDividido);
 
           //bufferDividido= strtok(buffer," ");
-        //  bufferDividido = quebrarString(buffer);
+
         //  bufferDividido = strtok(buffer," ");
           //printf("%s\n", &bufferDividido);
         //  printf("%s\n", bufferDividido);
