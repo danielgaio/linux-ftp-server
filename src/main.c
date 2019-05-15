@@ -9,7 +9,7 @@ int main(){
   //char *hello = (char*)"ola";
   //hello = (char*)malloc(sizeof(char)*5);
   // Cria socket de escuta na porta 21
-  new_socket = start_server(21);
+  new_socket = start_server(9999);
   char *buffer = (char*)malloc(sizeof(char)*1024);
   char **bufferDividido;
   int variavel = 1;

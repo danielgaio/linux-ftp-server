@@ -9,6 +9,7 @@
 #include "header.h"
 
 int start_server(int port) {
+	// server_fd é o socket de escuta, new socket é o que vai atender
 	int server_fd, new_socket;
 	struct sockaddr_in address;
 	int opt = 1;
@@ -66,15 +67,20 @@ int start_server(int port) {
 		exit(EXIT_FAILURE);
 	}
 
-	if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen))<0) {
+	/*
+if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen))<0) {
 		perror("accept");
 		exit(EXIT_FAILURE);
-	}
+	}*/
 
-	while (1){
-		//enviarValor(new_socket, "220 OK.");
-		send(new_socket , hello , strlen(hello) , 0 );
-		enviarValor(new_socket, "331 Please specify your password.");
+
+
+	while (new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen)){
+		enviarValor(new_socket, "220");
+		//send(new_socket , "220" , strlen("220") , 0 );
+		//send(new_socket , "220" , strlen("220") , 0 );
+		//enviarValor(new_socket, "331 Please specify your password.");
+		buffer = pegaValor(new_socket, buffer);
 		printf("%s\n", buffer);
 		bufferDividido = quebrarString(buffer," ");
 		printf("%s\n", bufferDividido[0]);
@@ -103,7 +109,7 @@ int start_server(int port) {
 char * pegaValor(int new_socket, char *buffer){
 	//char buffer[1024] = {0};
 	//char *buffer=(char*)malloc(sizeof(char)*1024);
-	int valread = read(new_socket ,buffer, 1024);
+	int valread = recv(new_socket ,buffer,0, 1024);
 	return buffer;
 }
 
