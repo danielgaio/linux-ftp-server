@@ -1,7 +1,7 @@
-// gcc main.cpp header.h server.c -o main
+// gcc main.c header.h server.c -o main
 
 #include <netdb.h> // sockets
-#include <cstdlib>
+//#include <cstdlib>
 #include "header.h"
 
 int main(){
@@ -10,28 +10,33 @@ int main(){
     hello = (char*)malloc(sizeof(char)*5);
     new_socket = start_server(21);
     char *buffer = (char*)malloc(sizeof(char)*1024);
-    char *bufferDividido;
-    //bufferDividido = (char*)malloc(sizeof(char)*50);
+
     int variavel = 1;
     int ordem = 0;
     char *vetor;
     vetor = (char*)malloc(sizeof(char)*50);
     if(new_socket== 0){
         perror("Erro ao atender cliente!\n");
-        exit(EXIT_FAILURE);
+        //exit(EXIT_FAILURE);
     }else{
         printf("Servidor atendeu cliente com sucesso!\n");
         while (variavel == 1){
           enviarValor(new_socket,"220");
-          buffer=pegaValor(new_socket, buffer);
-          printf("%s\n",buffer);
-          bufferDividido = quebrarString(buffer);
-          printf("%s\n", bufferDividido);
-          //bufferDividido= strtok(buffer," ");
+          buffer = pegaValor(new_socket, buffer);
+          printf("%s\n", buffer);
+          char *bufferDividido[10];
+          char delim = " ";
+        	char *ptr = strtok(*buffer, delim);
+        	int p = 0;
+        	while (ptr != NULL){
+             *bufferDividido[p] = ptr;
+             p = p + 1;
+        		 ptr = strtok(NULL, delim);
+        	 }
+          printf("%s\n", bufferDividido[0]);
 
         //  bufferDividido = strtok(buffer," ");
           //printf("%s\n", &bufferDividido);
-        //  printf("%s\n", bufferDividido);
 
 
 

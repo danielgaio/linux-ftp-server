@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
+#include <stdlib.h>
 //#include <bits/stdc++.h>
 //#include <boost/algorithm/string.hpp>
 int start_server(int port);
