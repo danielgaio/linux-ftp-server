@@ -57,12 +57,14 @@ int start_server(int port) {
 
 	return new_socket;
 }
+//Resposta do cliente
 char * pegaValor(int new_socket, char *buffer){
   //char buffer[1024] = {0};
 	//char *buffer=(char*)malloc(sizeof(char)*1024);
 	int valread = read(new_socket ,buffer, 1024);
 	return buffer;
 }
+//Enviar comando
 void  enviarValor(int new_socket, char *hello){
 	send(new_socket , hello , strlen(hello) , 0 );
 //	printf("Hello message sent\n");
@@ -92,15 +94,14 @@ char* quebrarString (char *str){
 	}
 	return *ponteiro;
 }*/
-char* quebrarString (char *stringao){
-	char *ponteiro[5];
+char quebrarString (char *stringao){
+	char ponteiro[10][100];
 	int p=0;
 	for(int i = 0; i < strlen(stringao); i++)
 	   {
 	   if (stringao[i] == ' ')
 	    {
 			    p=i + 1;
-					char *buffer = (char*)malloc(sizeof(char)*1024);
 					ponteiro[i]=buffer;
 	    }
 			strcpy(ponteiro[p][(i-p)], stringao[i]);

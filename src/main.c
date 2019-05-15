@@ -10,7 +10,7 @@ int main(){
     hello = (char*)malloc(sizeof(char)*5);
     new_socket = start_server(21);
     char *buffer = (char*)malloc(sizeof(char)*1024);
-    char *bufferDividido;
+    char bufferDividido;
     //bufferDividido = (char*)malloc(sizeof(char)*50);
     int variavel = 1;
     int ordem = 0;
