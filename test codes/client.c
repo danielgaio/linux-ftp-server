@@ -40,17 +40,54 @@ int main(int argc, char const *argv[]) {
 		printf("\nConnection Failed \n");
 		return -1;
 	}
-///Enviar comandos  e imprime
-	send(sock , hello , strlen(hello) , 0 );
-
+int variavel=1;
+int ordem=0;
+	printf("Conectou .....");
+//while (variavel==1){
+		printf("Conectou .....");
 	valread = read( sock , buffer, 1024);
-	printf("%s\n",buffer );
+	if(ordem == 0 && valread==220){
+			hello = "USER anonymous ";
+			send(sock , hello , strlen(hello) , 0 );
+			ordem=1;
+	}else if(ordem == 1 && valread==331 ){
+			hello = "PASS ";
+			send(sock , hello , strlen(hello) , 0 );
+			ordem=2;
+	}else if(ordem == 2 &&  valread==230){
+			hello = "Conectou";
+			send(sock , hello , strlen(hello) , 0 );
+			printf("Conectou");
+			}
+
+
+//}
+//	send(sock , hello , strlen(hello) , 0 );
+/*
+if(ordem == 0 && strcmp(valread, "220") == 0){
+		hello = "USER anonymous ";
+		send(sock , hello , strlen(hello) , 0 );
+		ordem=1;
+}else if(ordem == 1 && strcmp(valread, "331") == 0 ){
+		hello = "PASS ";
+		send(sock , hello , strlen(hello) , 0 );
+		ordem=2;
+}else if(ordem == 2 &&  strcmp(valread, "230") == 0 ){
+		hello = "Conectou";
+		send(sock , hello , strlen(hello) , 0 );
+		printf("Conectou");
+		}
+
+
+*/
+//	valread = read( sock , buffer, 1024);
+//	printf("%s\n",buffer );
 
 ///Primeiro comando USER
-hello = "USER ";
 
-send(sock , hello , strlen(hello) , 0 );
-valread = read( sock , buffer, 1024);
-printf("%s\n",buffer );
+
+
+
+//printf("%s\n",buffer );
 	return 0;
 }

@@ -94,17 +94,21 @@ char* quebrarString (char *str){
 	}
 	return *ponteiro;
 }*/
-char quebrarString (char *stringao){
-	char ponteiro[10][100];
-	int p=0;
-	for(int i = 0; i < strlen(stringao); i++)
-	   {
-	   if (stringao[i] == ' ')
-	    {
-			    p=i + 1;
-					ponteiro[i]=buffer;
-	    }
-			strcpy(ponteiro[p][(i-p)], stringao[i]);
-	   }
-		 return ponteiro;
-	}
+
+char **quebrarString (char *str,char *limitador){
+    char **ponteiro=(char**)malloc(sizeof(char*)*50);;
+	char *ptr = strtok(str,limitador);
+	int p = 0;
+	while (ptr != NULL){
+        ponteiro[p]=ptr;
+        p = p + 1;
+        ptr = strtok(NULL, limitador);
+	 }
+	  for (int i=0;i<10;i++){
+        if(ponteiro!=NULL){
+            printf("%s\n",ponteiro[i]);
+        }
+    }
+
+    return ponteiro;
+}

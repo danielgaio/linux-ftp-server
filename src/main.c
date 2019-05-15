@@ -1,7 +1,7 @@
-// gcc main.cpp header.h server.c -o main
+// gcc main.c header.h server.c -o main
 
 #include <netdb.h> // sockets
-#include <cstdlib>
+//#include <cstdlib>
 #include "header.h"
 
 int main(){
@@ -10,55 +10,36 @@ int main(){
     hello = (char*)malloc(sizeof(char)*5);
     new_socket = start_server(21);
     char *buffer = (char*)malloc(sizeof(char)*1024);
-    char bufferDividido;
-    //bufferDividido = (char*)malloc(sizeof(char)*50);
+    char **bufferDividido;
     int variavel = 1;
     int ordem = 0;
     char *vetor;
     vetor = (char*)malloc(sizeof(char)*50);
     if(new_socket== 0){
         perror("Erro ao atender cliente!\n");
-        exit(EXIT_FAILURE);
+        //exit(EXIT_FAILURE);
     }else{
         printf("Servidor atendeu cliente com sucesso!\n");
         while (variavel == 1){
           enviarValor(new_socket,"220");
-          buffer=pegaValor(new_socket, buffer);
-          printf("%s\n",buffer);
-          bufferDividido = quebrarString(buffer);
-          printf("%s\n", bufferDividido);
-          //bufferDividido= strtok(buffer," ");
+          buffer = pegaValor(new_socket, buffer);
+          printf("%s\n", buffer);
+          bufferDividido= quebrarString(buffer," ");
+          printf("%s\n", bufferDividido[0]);
+          if(ordem == 0 && strcmp(bufferDividido[0], "USER") == 0 && strcmp(bufferDividido[1], "anonymous") == 0){
+                  enviarValor(new_socket,"331");
+                  buffer = pegaValor(new_socket, buffer);
+                  ordem = 1;
+          }else if(ordem == 1 && strcmp(bufferDividido[0], "PASS") == 0 && strcmp(bufferDividido[1], "") == 0 ){
+                  enviarValor(new_socket, "230");
+                  buffer = pegaValor(new_socket, buffer);
+                  ordem = 2;
+          }else if(ordem == 2 &&  strcmp(bufferDividido[0], "PASS") == 0 &&  strcmp(bufferDividido[1], "") == 0){
+                  enviarValor(new_socket, "331");
+                  buffer = pegaValor(new_socket, buffer);
+                  ordem = 2;
+              }
 
-        //  bufferDividido = strtok(buffer," ");
-          //printf("%s\n", &bufferDividido);
-        //  printf("%s\n", bufferDividido);
-
-
-
-
-
-          /*
-          bufferDividido = strtok (buffer," ");
-          printf("%s\n", bufferDividido);
-
-        /*  if(ordem = 0 && strcmp(bufferDividido, "USER") == 0 && strcmp(bufferDividido, "anonymous") == 0){
-                enviarValor(new_socket,"331");
-                buffer = pegaValor(new_socket);
-                bufferDividido = strtok(buffer, " ");
-                ordem = 1;
-            }else if(ordem = 1 && strcmp(bufferDividido, "PASS") == 0 && strcmp(bufferDividido, "") == 0 ){
-                enviarValor(new_socket, "230");
-                buffer = pegaValor(new_socket);
-                bufferDividido = strtok (buffer," ");
-                ordem = 2;
-            }else if(ordem = 2 &&  strcmp(bufferDividido, "PASS") == 0 &&  strcmp(bufferDividido, "") == 0){
-                enviarValor(new_socket, "331");
-                buffer = pegaValor(new_socket);
-                bufferDividido = strtok(buffer, " ");
-                ordem = 2;
-            }
-*/
-          variavel = 2;
         }
 
 
