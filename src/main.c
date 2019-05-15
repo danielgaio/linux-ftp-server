@@ -8,7 +8,7 @@ int main(){
     int new_socket;
     char *hello = (char*)"ola";
     hello = (char*)malloc(sizeof(char)*5);
-    new_socket = start_server();
+    new_socket = start_server(21);
     char *buffer = (char*)malloc(sizeof(char)*1024);
     char *bufferDividido;
     //bufferDividido = (char*)malloc(sizeof(char)*50);
@@ -16,7 +16,6 @@ int main(){
     int ordem = 0;
     char *vetor;
     vetor = (char*)malloc(sizeof(char)*50);
-
     if(new_socket== 0){
         perror("Erro ao atender cliente!\n");
         exit(EXIT_FAILURE);
@@ -28,7 +27,6 @@ int main(){
           printf("%s\n",buffer);
           bufferDividido = quebrarString(buffer);
           printf("%s\n", bufferDividido);
-
           //bufferDividido= strtok(buffer," ");
 
         //  bufferDividido = strtok(buffer," ");

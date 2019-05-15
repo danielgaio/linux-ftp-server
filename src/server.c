@@ -7,9 +7,9 @@
 #include <netinet/in.h>
 #include <string.h>
 #include "header.h"
-#define PORT 21
 
-int start_server() {
+
+int start_server(int port) {
 	int server_fd,new_socket;
 	struct sockaddr_in address;
 	int opt = 1;
@@ -30,7 +30,7 @@ int start_server() {
 
 	address.sin_family = AF_INET;
 	address.sin_addr.s_addr = INADDR_ANY;
-	address.sin_port = htons( PORT );
+	address.sin_port = htons( port );
 
 	// Forcefully attaching socket to the port 21
 	if (bind(server_fd, (struct sockaddr *)&address, sizeof(address))<0) {
@@ -68,7 +68,7 @@ void  enviarValor(int new_socket, char *hello){
 //	printf("Hello message sent\n");
 }
 
-int qtd_espacos(char *str){
+/*int qtd_espacos(char *str){
     int espacos = 0;
     while(str){
         if (strcmp(str," ")==0){
@@ -81,11 +81,29 @@ int qtd_espacos(char *str){
 
 char* quebrarString (char *str){
 	int qtd_strings = qtd_espacos(str) + 1, i = 0;
-	char **ponteiro = new char*[qtd_strings];
+
 	char *pch = strtok (str," ");
-	while (pch != NULL){
-			strcpy(strings[i++], pch); //copiar cada string para a posição correta
+
+	for (int cont=0;pch != NULL;cont++){
+			char *palavra = (char*)malloc(sizeof(char)*1024);
+			strcpy(palavra, pch); //copiar cada string para a posição correta
+			ponteiro[cont]=palavra;
 			pch = strtok (NULL, " ");
 	}
-	return *strings;
-}
+	return *ponteiro;
+}*/
+char* quebrarString (char *stringao){
+	char *ponteiro[5];
+	int p=0;
+	for(int i = 0; i < strlen(stringao); i++)
+	   {
+	   if (stringao[i] == ' ')
+	    {
+			    p=i + 1;
+					char *buffer = (char*)malloc(sizeof(char)*1024);
+					ponteiro[i]=buffer;
+	    }
+			strcpy(ponteiro[p][(i-p)], stringao[i]);
+	   }
+		 return ponteiro;
+	}
