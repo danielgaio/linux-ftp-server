@@ -4,11 +4,12 @@ Software produced by:
 - Daniel E. Gaio
 - Matheus H. Koch
 
-iniciar Servidor <br>
+Do uso do servidor
+Compilação:  <br>
 gcc main.c header.h server.c -o server <br>
-./server
+Execução:
+./main (ou: sudo ./main)
 
-
-inicial Cleinte <br>
-g++ client.c -o client <br>
-./client
+Do uso de cliente
+No terminal digite (com o servidor já em execução):
+ftp localhost
