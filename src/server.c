@@ -15,7 +15,7 @@ int start_server(int port) {
 	int opt = 1;
 	int addrlen = sizeof(address);
 	char *buffer = (char*)malloc(sizeof(char)*1024);
-  char **bufferDividido;
+  	char **bufferDividido;
 	int ordem = 0;
 	//char buffer[1024] = {0};
 
@@ -77,9 +77,8 @@ if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&ad
 
 	while (new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen)){
 		enviarValor(new_socket, "220");
-		//send(new_socket , "220" , strlen("220") , 0 );
-		//send(new_socket , "220" , strlen("220") , 0 );
-		//enviarValor(new_socket, "331 Please specify your password.");
+		send(new_socket , "220" , strlen("220") , 0 );
+		enviarValor(new_socket, "331 Please specify your password.");
 		buffer = pegaValor(new_socket, buffer);
 		printf("%s\n", buffer);
 		bufferDividido = quebrarString(buffer," ");

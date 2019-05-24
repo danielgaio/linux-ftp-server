@@ -31,21 +31,20 @@ void* ConnectionHandler(void* socket_desc);
 char* GetFilenameFromRequest(char* request);
 bool SendFileOverSocket(int socket_desc, char* file_name);
 
-int main(int argc, char **argv)
-{
-	int     socket_desc, 
-		socket_client, 
-		*new_sock, 
+int main(int argc, char **argv){
+	int socket_desc,
+		socket_client,
+		*new_sock,
 		c = sizeof(struct sockaddr_in);
 
-	struct  sockaddr_in	server, 
-				client;
+	struct  sockaddr_in	server,
+			client;
 
 	// Create socket
 	socket_desc = socket(AF_INET, SOCK_STREAM, 0);
-	if (socket_desc == -1)
-	{
-		perror("Could not create socket");
+
+	if (socket_desc == -1){
+		perror("Could not create socket\n");
 		return 1;
 	}
 
@@ -53,70 +52,59 @@ int main(int argc, char **argv)
 	server.sin_addr.s_addr = INADDR_ANY;
 	server.sin_port = htons(SERVER_PORT);
 
-	if (bind(socket_desc, (struct sockaddr *)&server, sizeof(server)) < 0)
-	{
-		perror("Bind failed");
+	if (bind(socket_desc, (struct sockaddr *)&server, sizeof(server)) < 0){
+		perror("Bind failed\n");
 		return 1;
 	}
 
 	listen(socket_desc , 3);
 	
-	while (socket_client = accept(socket_desc, (struct sockaddr *)&client, (socklen_t*)&c))
-	{
+	while (socket_client = accept(socket_desc, (struct sockaddr *)&client, (socklen_t*)&c)){
 		pthread_t sniffer_thread;
 		new_sock = (int*)malloc(1);
 		*new_sock = socket_client;        
-		pthread_create(&sniffer_thread, NULL,  ConnectionHandler, (void*) new_sock);
+		pthread_create(&sniffer_thread, NULL, ConnectionHandler, (void*) new_sock);
 		pthread_join(sniffer_thread, NULL);
 	}
 	 
-	if (socket_client<0)
-	{
-		perror("Accept failed");
+	if (socket_client<0){
+		perror("Accept failed\n");
 		return 1;
 	}
 
 	return 0;
 }
 
-void *ConnectionHandler(void *socket_desc)
-{
+void *ConnectionHandler(void *socket_desc){
 	int	socket = *(int*)socket_desc;   
-	char	server_response[BUFSIZ],
-		client_request[BUFSIZ],
-		file_name[BUFSIZ];
+	char server_response[BUFSIZ], client_request[BUFSIZ], file_name[BUFSIZ];
 	
 	recv(socket, client_request, BUFSIZ, 0);
 	strcpy(file_name, GetFilenameFromRequest(client_request));
 
 	// If requested file exists, notify the client and send it
 	if (access(file_name, F_OK) != -1){
-
 		strcpy(server_response, "OK");
 		write(socket, server_response, strlen(server_response));
 		SendFileOverSocket(socket, file_name);
-	}
-	else {
+	}else {
 		// Requested file does not exist, notify the client
 		strcpy(server_response, "NO");
-		write(socket, server_response, strlen(server_response)); 
+		write(socket, server_response, strlen(server_response));
 	}
 
-	free(socket_desc);   
+	free(socket_desc);
 	return 0;
 }
 
 char* GetFilenameFromRequest(char* request){
-
 	char *file_name = strchr(request, ' ');
 	return file_name + 1;
 }
 
 bool SendFileOverSocket(int socket_desc, char* file_name){
-
 	struct stat	obj;
-	int		file_desc,
-			file_size;
+	int	file_desc, file_size;
 
 	stat(file_name, &obj);
 	file_desc = open(file_name, O_RDONLY);

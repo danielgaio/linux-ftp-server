@@ -8,8 +8,10 @@ int main(){
   int new_socket;
   //char *hello = (char*)"ola";
   //hello = (char*)malloc(sizeof(char)*5);
+
   // Cria socket de escuta na porta 21
-  new_socket = start_server(9999);
+  new_socket = start_server(21);
+
   char *buffer = (char*)malloc(sizeof(char)*1024);
   char **bufferDividido;
   int variavel = 1;
@@ -25,33 +27,30 @@ int main(){
 
     /*
     while (1){
-    enviarValor(new_socket, "220 OK.");
-    enviarValor(new_socket, "331 Please specify your password.");
-    //buffer = pegaValor(new_socket, buffer);
-    printf("%s\n", buffer);
-    bufferDividido = quebrarString(buffer," ");
-    printf("%s\n", bufferDividido[0]);
+      enviarValor(new_socket, "220 OK.");
+      enviarValor(new_socket, "331 Please specify your password.");
+      //buffer = pegaValor(new_socket, buffer);
+      printf("%s\n", buffer);
+      bufferDividido = quebrarString(buffer," ");
+      printf("%s\n", bufferDividido[0]);
 
-    if(ordem == 0 && strcmp(bufferDividido[0], "USER") == 0 && strcmp(bufferDividido[1], "anonymous") == 0){
-    enviarValor(new_socket, "331");
-    buffer = pegaValor(new_socket, buffer);
-    ordem = 1;
-  }else if(ordem == 1 && strcmp(bufferDividido[0], "PASS") == 0 && strcmp(bufferDividido[1], "") == 0 ){
-  enviarValor(new_socket, "230");
-  buffer = pegaValor(new_socket, buffer);
-  ordem = 2;
-}
-else if(ordem == 2 &&  strcmp(bufferDividido[0], "PASS") == 0 &&  strcmp(bufferDividido[1], "") == 0){
-enviarValor(new_socket, "331");
-buffer = pegaValor(new_socket, buffer);
-ordem = 2;
-}
-}*/
+      if(ordem == 0 && strcmp(bufferDividido[0], "USER") == 0 && strcmp(bufferDividido[1], "anonymous") == 0){
+        enviarValor(new_socket, "331");
+        buffer = pegaValor(new_socket, buffer);
+        ordem = 1;
+      }else if(ordem == 1 && strcmp(bufferDividido[0], "PASS") == 0 && strcmp(bufferDividido[1], "") == 0 ){
+        enviarValor(new_socket, "230");
+        buffer = pegaValor(new_socket, buffer);
+        ordem = 2;
+      }else if(ordem == 2 &&  strcmp(bufferDividido[0], "PASS") == 0 &&  strcmp(bufferDividido[1], "") == 0){
+        enviarValor(new_socket, "331");
+        buffer = pegaValor(new_socket, buffer);
+        ordem = 2;
+      }
+    }*/
+  }
 
-
-}
-
-return 0;
+  return 0;
 }
 
 /*
