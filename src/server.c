@@ -68,16 +68,22 @@ int start_server(int port) {
 
 	char msg_bem_vindo[BUFFER_SIZE];
 	strcat(msg_bem_vindo, "220 Bem vindo ao servidor FTP\n");
+
 	write(server_connection_socket, msg_bem_vindo, strlen(msg_bem_vindo));
 	printf("Mensagem de boas vindas enviada\n");
+
 	read(server_connection_socket, buffer_entrada, BUFFER_SIZE);
 	printf("Msg do cliente: %s", buffer_entrada);
+
+	memset(buffer_saida, 0, sizeof buffer_saida);
 	strcat(buffer_saida, "331 Nome de usuario okay, preciso da senha\n");
-	printf("buffer_saida: %s\n", buffer_saida);
+	printf("buffer_saida: %s", buffer_saida);
 	write(server_connection_socket, buffer_saida, strlen(buffer_saida));
 	printf("Pedido de senha enviado\n");
 
-	system("pause");
+	memset(&buffer_entrada, 0, sizeof buffer_entrada);
+	read(server_connection_socket, buffer_entrada, BUFFER_SIZE);
+	printf("Senha do usuario: %s\n", buffer_entrada);
 
 	printf("Adentrando ao loop\n");
 	while (1){
