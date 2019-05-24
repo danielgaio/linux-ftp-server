@@ -4,50 +4,16 @@
 #include "header.h"
 
 int main(){
-  printf("Server is runnig...");
-  int new_socket;
-  //char *hello = (char*)"ola";
-  //hello = (char*)malloc(sizeof(char)*5);
+  printf("Server is runnig...\n");
 
-  // Cria socket de escuta na porta 21
-  new_socket = start_server(21);
+  // Cria socket de escuta
+  int server_socket = start_server(9922);
 
-  char *buffer = (char*)malloc(sizeof(char)*1024);
-  char **bufferDividido;
-  int variavel = 1;
-  int ordem = 0;
-  char *vetor;
-  vetor = (char*)malloc(sizeof(char)*50);
-
-  if(new_socket == 0){
+  if(server_socket == 0){
     perror("Erro ao atender cliente!\n");
     exit(EXIT_FAILURE);
   }else{
     printf("Servidor atendeu cliente com sucesso!\n");
-
-    /*
-    while (1){
-      enviarValor(new_socket, "220 OK.");
-      enviarValor(new_socket, "331 Please specify your password.");
-      //buffer = pegaValor(new_socket, buffer);
-      printf("%s\n", buffer);
-      bufferDividido = quebrarString(buffer," ");
-      printf("%s\n", bufferDividido[0]);
-
-      if(ordem == 0 && strcmp(bufferDividido[0], "USER") == 0 && strcmp(bufferDividido[1], "anonymous") == 0){
-        enviarValor(new_socket, "331");
-        buffer = pegaValor(new_socket, buffer);
-        ordem = 1;
-      }else if(ordem == 1 && strcmp(bufferDividido[0], "PASS") == 0 && strcmp(bufferDividido[1], "") == 0 ){
-        enviarValor(new_socket, "230");
-        buffer = pegaValor(new_socket, buffer);
-        ordem = 2;
-      }else if(ordem == 2 &&  strcmp(bufferDividido[0], "PASS") == 0 &&  strcmp(bufferDividido[1], "") == 0){
-        enviarValor(new_socket, "331");
-        buffer = pegaValor(new_socket, buffer);
-        ordem = 2;
-      }
-    }*/
   }
 
   return 0;

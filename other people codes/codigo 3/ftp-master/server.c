@@ -1,3 +1,5 @@
+//https://github.com/Siim/ftp
+
 #include "common.h"
 /** 
  * Sets up server and handles incoming connections
@@ -27,6 +29,7 @@ void server(int port)
     if(pid==0){
       close(sock);
       char welcome[BSIZE] = "220 ";
+
       if(strlen(welcome_message)<BSIZE-4){
         strcat(welcome,welcome_message);
       }else{
@@ -207,5 +210,4 @@ main()
 {
   server(8021);
   return 0;
-
 }

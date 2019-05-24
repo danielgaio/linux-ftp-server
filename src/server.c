@@ -1,23 +1,13 @@
-//Fonte: https://www.geeksforgeeks.org/socket-programming-cc/
-
-// Server side C/C++ program to demonstrate Socket programming
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <stdlib.h>
-#include <netinet/in.h>
-#include <string.h>
 #include "header.h"
 
 int start_server(int port) {
-	// server_fd é o socket de escuta, new socket é o que vai atender
-	int server_fd, new_socket;
+	// server_connection_socket é o que vai atender
+	int server_listen_socket, server_connection_socket;
 	struct sockaddr_in address;
-	int opt = 1;
 	int addrlen = sizeof(address);
-	char *buffer = (char*)malloc(sizeof(char)*1024);
+	char buffer_entrada[BUFFER_SIZE], buffer_saida[BUFFER_SIZE];
   	char **bufferDividido;
 	int ordem = 0;
-	//char buffer[1024] = {0};
 
 	// Creating socket file descriptor
 	// socket - create an endpoint for communication
@@ -26,30 +16,30 @@ int start_server(int port) {
 	// SOCK_STREAM     Provides sequenced, reliable, two-way, connection-based
 	//                     byte  streams.  An out-of-band data transmission mecha‐
 	//                     nism may be supported.
-	if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
-		perror("socket failed");
+	if ((server_listen_socket = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+		perror("A criacao do socket de escuta falhou\n");
 		exit(EXIT_FAILURE);
+	}else{
+		printf("Socket de escuta criado\n");
 	}
 
-	// Forcefully attaching socket to the port 21
-	// int setsockopt(int sockfd, int level, int optname, const void *optval, socklen_t optlen);
-	if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt))) {
-		perror("setsockopt");
-		exit(EXIT_FAILURE);
-	}
+	//int reuse = 1;
+	/* Address can be reused instantly after program exits */
+  	//setsockopt(server_listen_socket, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof reuse);
 
 	address.sin_family = AF_INET;
 	address.sin_addr.s_addr = INADDR_ANY;
 	// The htons() function converts the unsigned short integer hostshort from
 	//     host byte order to network byte order.
-	address.sin_port = htons( port ); // port = 21
+	address.sin_port = htons( port );
 
-	// Forcefully attaching socket to the port 21
 	// int bind(int sockfd, const struct sockaddr *addr,
 	//              socklen_t addrlen);
-	if (bind(server_fd, (struct sockaddr *)&address, sizeof(address))<0) {
-		perror("bind failed");
+	if (bind(server_listen_socket, (struct sockaddr *)&address, sizeof(address)) == -1) {
+		perror("bind failed\n");
 		exit(EXIT_FAILURE);
+	}else{
+		printf("Bind executado com sucesso\n");
 	}
 
 	// int listen(int sockfd, int backlog);
@@ -62,59 +52,63 @@ int start_server(int port) {
 	indication  of ECONNREFUSED or, if the underlying protocol supports re‐
 	transmission, the request may be ignored so that a later  reattempt  at
 	connection succeeds.*/
-	if (listen(server_fd, 3) < 0) {
-		perror("listen");
+	if (listen(server_listen_socket, 3) == -1) {
+		perror("listen\n");
 		exit(EXIT_FAILURE);
+	}else{
+		printf("Comando Listen() executado com sucesso\n");
+	}
+	
+	if ((server_connection_socket = accept(server_listen_socket, (struct sockaddr *)&address, (socklen_t*)&addrlen)) == -1) {
+		perror("accept\n");
+		exit(EXIT_FAILURE);
+	}else{
+		printf("Comando accept() executado\n");
 	}
 
-	/*
-if ((new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen))<0) {
-		perror("accept");
-		exit(EXIT_FAILURE);
-	}*/
+	char msg_bem_vindo[BUFFER_SIZE];
+	strcat(msg_bem_vindo, "220 Bem vindo ao servidor FTP\n");
+	write(server_connection_socket, msg_bem_vindo, strlen(msg_bem_vindo));
+	printf("Mensagem de boas vindas enviada\n");
+	read(server_connection_socket, buffer_entrada, BUFFER_SIZE);
+	printf("Msg do cliente: %s", buffer_entrada);
+	strcat(buffer_saida, "331 Nome de usuario okay, preciso da senha\n");
+	printf("buffer_saida: %s\n", buffer_saida);
+	write(server_connection_socket, buffer_saida, strlen(buffer_saida));
+	printf("Pedido de senha enviado\n");
 
+	system("pause");
 
+	printf("Adentrando ao loop\n");
+	while (1){
+		//bufferDividido = quebrarString(buffer_entrada," ");
+		//printf("%s\n", bufferDividido[0]);
 
-	while (new_socket = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen)){
-		enviarValor(new_socket, "220");
-		send(new_socket , "220" , strlen("220") , 0 );
-		enviarValor(new_socket, "331 Please specify your password.");
-		buffer = pegaValor(new_socket, buffer);
-		printf("%s\n", buffer);
-		bufferDividido = quebrarString(buffer," ");
-		printf("%s\n", bufferDividido[0]);
-
-		if(ordem == 0 && strcmp(bufferDividido[0], "USER") == 0 && strcmp(bufferDividido[1], "anonymous") == 0){
-			enviarValor(new_socket, "331");
-			buffer = pegaValor(new_socket, buffer);
+		/*if(ordem == 0 && strcmp(bufferDividido[0], "USER") == 0 && strcmp(bufferDividido[1], "anonymous") == 0){
+			enviarValor(server_connection_socket, "331");
+			//buffer_entrada = pegaValor(server_connection_socket, buffer_entrada);
 			ordem = 1;
 		}else if(ordem == 1 && strcmp(bufferDividido[0], "PASS") == 0 && strcmp(bufferDividido[1], "") == 0 ){
-			enviarValor(new_socket, "230");
-			buffer = pegaValor(new_socket, buffer);
+			enviarValor(server_connection_socket, "230");
+			//buffer_entrada = pegaValor(server_connection_socket, buffer_entrada);
 			ordem = 2;
-		}
+		}*/
 	}
 
-	/// Enviar as respostas
-	//	valread = read( new_socket , buffer, 1024);
-	//	printf("%s\n",buffer );
-	//	send(new_socket , hello , strlen(hello) , 0 );
-	//	printf("Hello message sent\n");
-
-	return new_socket;
+	return server_connection_socket;
 }
 
 //Resposta do cliente
-char * pegaValor(int new_socket, char *buffer){
-	//char buffer[1024] = {0};
-	//char *buffer=(char*)malloc(sizeof(char)*1024);
-	int valread = recv(new_socket ,buffer,0, 1024);
-	return buffer;
+char * pegaValor(int server_connection_socket, char *buffer_entrada){
+	//char buffer_entrada[1024] = {0};
+	//char *buffer_entrada=(char*)malloc(sizeof(char)*1024);
+	int valread = recv(server_connection_socket ,buffer_entrada,0, 1024);
+	return buffer_entrada;
 }
 
 //Enviar comando
-void  enviarValor(int new_socket, char *hello){
-	send(new_socket , hello , strlen(hello) , 0 );
+void  enviarValor(int server_connection_socket, char *hello){
+	send(server_connection_socket , hello , strlen(hello) , 0 );
 	//	printf("Hello message sent\n");
 }
 
