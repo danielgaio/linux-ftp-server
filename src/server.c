@@ -67,13 +67,8 @@ int start_server(int port) {
 		printf("Comando accept() executado\n");
 	}
 
-<<<<<<< HEAD
 	char msg_bem_vindo[BUFFER_SIZE]={0};
 
-=======
-	// =================== Inicialização conexão =====================
-	char msg_bem_vindo[BUFFER_SIZE];
->>>>>>> b1b847883b56d8288050c8e74342ba2a6c761935
 	strcat(msg_bem_vindo, "220 Bem vindo ao servidor FTP\n");
 
 	write(server_connection_socket, msg_bem_vindo, strlen(msg_bem_vindo));
@@ -115,21 +110,82 @@ int start_server(int port) {
 		sscanf(buffer_entrada,"%s %s", comando, argumento);
 
 		printf("Comando: %s - Argumento: %s\n", comando, argumento);
+		if(strcmp (comando, "PORT") == 0){
+			sscanf(buffer_entrada,"%s %s", comando, argumento);
+			printf("buffer_saida: %s", argumento);
+		//	int dados =connectPORT(argumento);
+			memset(buffer_saida, 0, sizeof buffer_saida);
+			strcat(buffer_saida, "200 PORT command successful.\n");
+			printf("buffer_saida: %s", buffer_saida);
+			write(server_connection_socket, buffer_saida, strlen(buffer_saida));
 
+
+		}
 		memset(&buffer_entrada, 0, sizeof buffer_entrada);
 	}
-
-<<<<<<< HEAD
-	return ponteiro;
-}
-=======
 	return server_connection_socket;
 }
 
+
+/*
+int connectPORT(char  argumento[128]){
+			char a[3],b[3],c[3],d[3],pd[3],pe[3],porta[4]={0}, ip[15];
+			int portadi,portaei
+			sscanf(argumento,"%s,%s,%s,%s,%s,%s",a,b,c,d,pd,pe);
+			//Calcular porta
+			sscanf(pd,"%i",portadi);
+			portadi=(portadi/16);
+			sscanf(pe,"%i",portaei);
+			portaei=(portaei/16);
+			sscanf(portadi,"%s",pd);
+			sscanf(portaei,"%s",pe);
+			strcpy(porta,portadi);
+			strcat(porta,portaei);
+			//Juntar Ip
+			strcpy(ip,a);
+			strcat(ip,".");
+			strcat(ip,b);
+			strcat(ip,".");
+			strcat(ip,c);
+			strcat(ip,".");
+			strcat(ip,d);
+
+			struct sockaddr_in address;
+	    int sock = 0, valread;
+	    struct sockaddr_in serv_addr;
+	    char buffer[1024] = {0};
+	    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+	    {
+	        printf("\n Socket creation error \n");
+	        return -1;
+	    }
+
+	    memset(&serv_addr, '0', sizeof(serv_addr));
+
+	    serv_addr.sin_family = AF_INET;
+	    serv_addr.sin_port = htons(porta);
+	    // Convert IPv4 and IPv6 addresses from text to binary form
+	    if(inet_pton(AF_INET, ip, &serv_addr.sin_addr)<=0)
+	    {
+	        printf("\nInvalid address/ Address not supported \n");
+	        return -1;
+	    }
+	    if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
+	    {
+	        printf("\nConnection Failed \n");
+	        return -1;
+	    }
+			printf("\nConnect dados \n");
+	    return sock;
+
+
+}
+
+
 /*
 COMANDOS:
-USER <SP> <username> <CRLF>
-PASS <SP> <password> <CRLF>
+USER <SP> <username> <CRLF> ok
+PASS <SP> <password> <CRLF> ok
 ACCT <SP> <account-information> <CRLF>
 CWD  <SP> <pathname> <CRLF>
 CDUP <CRLF>
@@ -240,4 +296,3 @@ File unavailable (e.g., file busy).
 452 Requested action not taken.
 Insufficient storage space in system.
 */
->>>>>>> b1b847883b56d8288050c8e74342ba2a6c761935
