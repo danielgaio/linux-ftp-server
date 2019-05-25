@@ -58,7 +58,7 @@ int start_server(int port) {
 	}else{
 		printf("Comando Listen() executado com sucesso\n");
 	}
-	
+
 	if ((server_connection_socket = accept(server_listen_socket, (struct sockaddr *)&address, (socklen_t*)&addrlen)) == -1) {
 		perror("accept\n");
 		exit(EXIT_FAILURE);
@@ -66,7 +66,8 @@ int start_server(int port) {
 		printf("Comando accept() executado\n");
 	}
 
-	char msg_bem_vindo[BUFFER_SIZE];
+	char msg_bem_vindo[BUFFER_SIZE]={0};
+
 	strcat(msg_bem_vindo, "220 Bem vindo ao servidor FTP\n");
 	write(server_connection_socket, msg_bem_vindo, strlen(msg_bem_vindo));
 	printf("Mensagem de boas vindas enviada\n");
