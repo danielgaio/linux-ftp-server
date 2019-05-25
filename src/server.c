@@ -6,8 +6,9 @@ int start_server(int port) {
 	struct sockaddr_in address;
 	int addrlen = sizeof(address);
 	char buffer_entrada[BUFFER_SIZE], buffer_saida[BUFFER_SIZE];
-  	char **bufferDividido;
-	int ordem = 0;
+	//int ordem = 0;
+	//char **bufferDividido;
+	char comando[8], argumento[128];
 
 	// Creating socket file descriptor
 	// socket - create an endpoint for communication
@@ -66,92 +67,177 @@ int start_server(int port) {
 		printf("Comando accept() executado\n");
 	}
 
+<<<<<<< HEAD
 	char msg_bem_vindo[BUFFER_SIZE]={0};
 
+=======
+	// =================== Inicialização conexão =====================
+	char msg_bem_vindo[BUFFER_SIZE];
+>>>>>>> b1b847883b56d8288050c8e74342ba2a6c761935
 	strcat(msg_bem_vindo, "220 Bem vindo ao servidor FTP\n");
+
 	write(server_connection_socket, msg_bem_vindo, strlen(msg_bem_vindo));
 	printf("Mensagem de boas vindas enviada\n");
+
 	read(server_connection_socket, buffer_entrada, BUFFER_SIZE);
 	printf("Msg do cliente: %s", buffer_entrada);
+
+	memset(buffer_saida, 0, sizeof buffer_saida);
 	strcat(buffer_saida, "331 Nome de usuario okay, preciso da senha\n");
-	printf("buffer_saida: %s\n", buffer_saida);
+	printf("buffer_saida: %s", buffer_saida);
 	write(server_connection_socket, buffer_saida, strlen(buffer_saida));
 	printf("Pedido de senha enviado\n");
 
-	system("pause");
+	memset(&buffer_entrada, 0, sizeof buffer_entrada);
+	read(server_connection_socket, buffer_entrada, BUFFER_SIZE);
+	printf("Senha do usuario: %s\n", buffer_entrada);
+
+	memset(buffer_saida, 0, sizeof buffer_saida);
+	strcat(buffer_saida, "230 Usuario logado\n");
+	printf("buffer_saida: %s", buffer_saida);
+	write(server_connection_socket, buffer_saida, strlen(buffer_saida));
+
+	memset(&buffer_entrada, 0, sizeof buffer_entrada);
+	read(server_connection_socket, buffer_entrada, BUFFER_SIZE);
+	printf("Proximo comando: %s\n", buffer_entrada);
+
+	memset(buffer_saida, 0, sizeof buffer_saida);
+	strcat(buffer_saida, "215 UNIX Type: L8\n");
+	printf("buffer_saida: %s", buffer_saida);
+	write(server_connection_socket, buffer_saida, strlen(buffer_saida));
+	// =================== Inicialização conexão =====================
 
 	printf("Adentrando ao loop\n");
-	while (1){
-		//bufferDividido = quebrarString(buffer_entrada," ");
-		//printf("%s\n", bufferDividido[0]);
+	memset(&buffer_entrada, 0, sizeof buffer_entrada);
 
-		/*if(ordem == 0 && strcmp(bufferDividido[0], "USER") == 0 && strcmp(bufferDividido[1], "anonymous") == 0){
-			enviarValor(server_connection_socket, "331");
-			//buffer_entrada = pegaValor(server_connection_socket, buffer_entrada);
-			ordem = 1;
-		}else if(ordem == 1 && strcmp(bufferDividido[0], "PASS") == 0 && strcmp(bufferDividido[1], "") == 0 ){
-			enviarValor(server_connection_socket, "230");
-			//buffer_entrada = pegaValor(server_connection_socket, buffer_entrada);
-			ordem = 2;
-		}*/
+	while (read(server_connection_socket, buffer_entrada, BUFFER_SIZE)){
+
+		sscanf(buffer_entrada,"%s %s", comando, argumento);
+
+		printf("Comando: %s - Argumento: %s\n", comando, argumento);
+
+		memset(&buffer_entrada, 0, sizeof buffer_entrada);
 	}
 
+<<<<<<< HEAD
+	return ponteiro;
+}
+=======
 	return server_connection_socket;
 }
 
-//Resposta do cliente
-char * pegaValor(int server_connection_socket, char *buffer_entrada){
-	//char buffer_entrada[1024] = {0};
-	//char *buffer_entrada=(char*)malloc(sizeof(char)*1024);
-	int valread = recv(server_connection_socket ,buffer_entrada,0, 1024);
-	return buffer_entrada;
-}
+/*
+COMANDOS:
+USER <SP> <username> <CRLF>
+PASS <SP> <password> <CRLF>
+ACCT <SP> <account-information> <CRLF>
+CWD  <SP> <pathname> <CRLF>
+CDUP <CRLF>
+SMNT <SP> <pathname> <CRLF>
+QUIT <CRLF>
+REIN <CRLF>
+PORT <SP> <host-port> <CRLF>
+PASV <CRLF>
+TYPE <SP> <type-code> <CRLF>
+STRU <SP> <structure-code> <CRLF>
+MODE <SP> <mode-code> <CRLF>
+RETR <SP> <pathname> <CRLF>
+STOR <SP> <pathname> <CRLF>
+STOU <CRLF>
+APPE <SP> <pathname> <CRLF>
+ALLO <SP> <decimal-integer>
+[<SP> R <SP> <decimal-integer>] <CRLF>
+REST <SP> <marker> <CRLF>
+RNFR <SP> <pathname> <CRLF>
+RNTO <SP> <pathname> <CRLF>
+ABOR <CRLF>
+DELE <SP> <pathname> <CRLF>
+RMD  <SP> <pathname> <CRLF>
+MKD  <SP> <pathname> <CRLF>
+PWD  <CRLF>
+LIST [<SP> <pathname>] <CRLF>
+NLST [<SP> <pathname>] <CRLF>
+SITE <SP> <string> <CRLF>
+SYST <CRLF>
+STAT [<SP> <pathname>] <CRLF>
+HELP [<SP> <string>] <CRLF>
+NOOP <CRLF>
 
-//Enviar comando
-void  enviarValor(int server_connection_socket, char *hello){
-	send(server_connection_socket , hello , strlen(hello) , 0 );
-	//	printf("Hello message sent\n");
-}
+RESPOSTAS:
+200 Command okay.
+202 Command not implemented, superfluous at this site.
+211 System status, or system help reply.
+212 Directory status.
+213 File status.
+214 Help message.
+On how to use the server or the meaning of a particular
+non-standard command.  This reply is useful only to the
+human user.
+215 NAME system type.
+Where NAME is an official system name from the list in the
+Assigned Numbers document.
+220 Service ready for new user.
+221 Service closing control connection.
+Logged out if appropriate.
+225 Data connection open; no transfer in progress.
+226 Closing data connection.
+Requested file action successful (for example, file
+transfer or file abort).
+227 Entering Passive Mode (h1,h2,h3,h4,p1,p2).
+230 User logged in, proceed.
+250 Requested file action okay, completed.
+257 "PATHNAME" created.
 
-/*int qtd_espacos(char *str){
-int espacos = 0;
-while(str){
-if (strcmp(str," ")==0){
-espacos++;
-}
-str++;
-}
-return espacos;
-}
+331 User name okay, need password.
+332 Need account for login.200 Command okay.
+202 Command not implemented, superfluous at this site.
+211 System status, or system help reply.
+212 Directory status.
+213 File status.
+214 Help message.
+On how to use the server or the meaning of a particular
+non-standard command.  This reply is useful only to the
+human user.
+215 NAME system type.
+Where NAME is an official system name from the list in the
+Assigned Numbers document.
+220 Service ready for new user.
+221 Service closing control connection.
+Logged out if appropriate.
+225 Data connection open; no transfer in progress.
+226 Closing data connection.
+Requested file action successful (for example, file
+transfer or file abort).
+227 Entering Passive Mode (h1,h2,h3,h4,p1,p2).
+230 User logged in, proceed.
+250 Requested file action okay, completed.
+257 "PATHNAME" created.
 
-char* quebrarString (char *str){
-int qtd_strings = qtd_espacos(str) + 1, i = 0;
+331 User name okay, need password.
+332 Need account for login.
+350 Requested file action pending further information.
 
-char *pch = strtok (str," ");
+421 Service not available, closing control connection.
+This may be a reply to any command if the service knows it
+must shut down.
+425 Can't open data connection.
+426 Connection closed; transfer aborted.
+450 Requested file action not taken.
+File unavailable (e.g., file busy).
+451 Requested action aborted: local error in processing.
+452 Requested action not taken.
+Insufficient storage space in system.
+350 Requested file action pending further information.
 
-for (int cont=0;pch != NULL;cont++){
-char *palavra = (char*)malloc(sizeof(char)*1024);
-strcpy(palavra, pch); //copiar cada string para a posição correta
-ponteiro[cont]=palavra;
-pch = strtok (NULL, " ");
-}
-return *ponteiro;
-}*/
-
-char **quebrarString (char *str,char *limitador){
-	char **ponteiro=(char**)malloc(sizeof(char*)*50);;
-	char *ptr = strtok(str,limitador);
-	int p = 0;
-	while (ptr != NULL){
-		ponteiro[p]=ptr;
-		p = p + 1;
-		ptr = strtok(NULL, limitador);
-	}
-	for (int i=0;i<10;i++){
-		if(ponteiro!=NULL){
-			printf("%s\n",ponteiro[i]);
-		}
-	}
-
-	return ponteiro;
-}
+421 Service not available, closing control connection.
+This may be a reply to any command if the service knows it
+must shut down.
+425 Can't open data connection.
+426 Connection closed; transfer aborted.
+450 Requested file action not taken.
+File unavailable (e.g., file busy).
+451 Requested action aborted: local error in processing.
+452 Requested action not taken.
+Insufficient storage space in system.
+*/
+>>>>>>> b1b847883b56d8288050c8e74342ba2a6c761935
