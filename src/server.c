@@ -113,34 +113,83 @@ int start_server(int port) {
 		if(strcmp (comando, "PORT") == 0){
 			sscanf(buffer_entrada,"%s %s", comando, argumento);
 			printf("buffer_saida: %s", argumento);
-		//	int dados =connectPORT(argumento);
+			int dados=connectPORT(argumento);
 			memset(buffer_saida, 0, sizeof buffer_saida);
 			strcat(buffer_saida, "200 PORT command successful.\n");
 			printf("buffer_saida: %s", buffer_saida);
 			write(server_connection_socket, buffer_saida, strlen(buffer_saida));
-
-
 		}
+		if(strcmp (comando, "PASV") == 0){
+			sscanf(buffer_entrada,"%s %s", comando, argumento);
+			printf("buffer_saida: %s", argumento);
+
+			int dados =serverPorta(20);
+			memset(buffer_saida, 0, sizeof buffer_saida);
+			strcat(buffer_saida, "227 Entering Passive Mode (192,168,150,90,195,149) .\n");
+			printf("buffer_saida: %s", buffer_saida);
+			write(server_connection_socket, buffer_saida, strlen(buffer_saida));
+		}
+
+
+
+		memset(&comando, 0, sizeof comando);
+		memset(&argumento, 0, sizeof argumento);
 		memset(&buffer_entrada, 0, sizeof buffer_entrada);
 	}
 	return server_connection_socket;
 }
 
+//PASV  dados
+int serverPorta(int port) {
+ int listen_socket, connection_socket;
+ struct sockaddr_in address;
+ int addrlen = sizeof(address);
+ char buffer_entrada[BUFFER_SIZE], buffer_saida[BUFFER_SIZE];
+ if ((listen_socket = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+	 perror("A criacao do socket de escuta falhou\n");
+	 exit(EXIT_FAILURE);
+ }else{
+	 printf("Socket de escuta criado\n");
+ }
+ address.sin_family = AF_INET;
+ address.sin_addr.s_addr = INADDR_ANY;
+ address.sin_port = htons( port );
+ if (bind(listen_socket, (struct sockaddr *)&address, sizeof(address)) == -1) {
+	 perror("bind failed\n");
+	 exit(EXIT_FAILURE);
+ }else{
+	 printf("Bind executado com sucesso\n");
+ }
+ if (listen(listen_socket, 3) == -1) {
+	 perror("listen\n");
+	 exit(EXIT_FAILURE);
+ }else{
+	 printf("Comando Listen() executado com sucesso\n");
+ }
+ if ((connection_socket = accept(listen_socket, (struct sockaddr *)&address, (socklen_t*)&addrlen)) == -1) {
+	 perror("accept\n");
+	 exit(EXIT_FAILURE);
+ }else{
+	 printf("Comando accept() executado\n");
+ }
+return connection_socket;
+}
 
-/*
+
+
 int connectPORT(char  argumento[128]){
-			char a[3],b[3],c[3],d[3],pd[3],pe[3],porta[4]={0}, ip[15];
-			int portadi,portaei
+			char a[3],b[3],c[3],d[3],pd[3],pe[3],porta[5], ip[15];
+			int portadi,portaei;
 			sscanf(argumento,"%s,%s,%s,%s,%s,%s",a,b,c,d,pd,pe);
 			//Calcular porta
-			sscanf(pd,"%i",portadi);
-			portadi=(portadi/16);
-			sscanf(pe,"%i",portaei);
-			portaei=(portaei/16);
+		/*	sscanf(pd,"%X",portadi);
+			sscanf(pe,"%X",portaei);
+			sscanf(portadi,"%d",portadi);
+			sscanf(portaei,"%d",portaei);
 			sscanf(portadi,"%s",pd);
 			sscanf(portaei,"%s",pe);
 			strcpy(porta,portadi);
-			strcat(porta,portaei);
+			strcat(porta,portaei);*/
 			//Juntar Ip
 			strcpy(ip,a);
 			strcat(ip,".");
@@ -149,7 +198,10 @@ int connectPORT(char  argumento[128]){
 			strcat(ip,c);
 			strcat(ip,".");
 			strcat(ip,d);
-
+			printf("ip: %s porta: %s \n",ip,porta);
+			return 0;
+		}
+/*
 			struct sockaddr_in address;
 	    int sock = 0, valread;
 	    struct sockaddr_in serv_addr;
@@ -177,7 +229,7 @@ int connectPORT(char  argumento[128]){
 	    }
 			printf("\nConnect dados \n");
 	    return sock;
-
+*
 
 }
 
