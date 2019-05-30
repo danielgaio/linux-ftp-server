@@ -9,6 +9,6 @@
 #define BUFFER_SIZE 1024
 
 int start_server(int port);
-char *pegaValor(int new_socket, char *buffer);
-void enviarValor(int new_socket, char *hello);
-char **quebrarString (char *str,char *limitador);
+void lb(char *buffer);
+int serverPorta(int port);
+int connectPORT(char  argumento[128]);

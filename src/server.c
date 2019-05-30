@@ -24,10 +24,6 @@ int start_server(int port) {
 		printf("Socket de escuta criado\n");
 	}
 
-	//int reuse = 1;
-	/* Address can be reused instantly after program exits */
-  	//setsockopt(server_listen_socket, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof reuse);
-
 	address.sin_family = AF_INET;
 	address.sin_addr.s_addr = INADDR_ANY;
 	// The htons() function converts the unsigned short integer hostshort from
@@ -67,67 +63,70 @@ int start_server(int port) {
 		printf("Comando accept() executado\n");
 	}
 
-	char msg_bem_vindo[BUFFER_SIZE]={0};
-
+	// =================== Inicialização conexão =====================
+	char msg_bem_vindo[BUFFER_SIZE] = {0};
 	strcat(msg_bem_vindo, "220 Bem vindo ao servidor FTP\n");
-
 	write(server_connection_socket, msg_bem_vindo, strlen(msg_bem_vindo));
 	printf("Mensagem de boas vindas enviada\n");
 
 	read(server_connection_socket, buffer_entrada, BUFFER_SIZE);
 	printf("Msg do cliente: %s", buffer_entrada);
 
-	memset(buffer_saida, 0, sizeof buffer_saida);
+	lb(buffer_saida);
 	strcat(buffer_saida, "331 Nome de usuario okay, preciso da senha\n");
 	printf("buffer_saida: %s", buffer_saida);
 	write(server_connection_socket, buffer_saida, strlen(buffer_saida));
 	printf("Pedido de senha enviado\n");
 
-	memset(&buffer_entrada, 0, sizeof buffer_entrada);
+	lb(buffer_entrada);
 	read(server_connection_socket, buffer_entrada, BUFFER_SIZE);
 	printf("Senha do usuario: %s\n", buffer_entrada);
 
-	memset(buffer_saida, 0, sizeof buffer_saida);
+	lb(buffer_saida);
 	strcat(buffer_saida, "230 Usuario logado\n");
 	printf("buffer_saida: %s", buffer_saida);
 	write(server_connection_socket, buffer_saida, strlen(buffer_saida));
 
-	memset(&buffer_entrada, 0, sizeof buffer_entrada);
+	lb(buffer_entrada);
 	read(server_connection_socket, buffer_entrada, BUFFER_SIZE);
 	printf("Proximo comando: %s\n", buffer_entrada);
 
-	memset(buffer_saida, 0, sizeof buffer_saida);
+	lb(buffer_saida);
 	strcat(buffer_saida, "215 UNIX Type: L8\n");
 	printf("buffer_saida: %s", buffer_saida);
 	write(server_connection_socket, buffer_saida, strlen(buffer_saida));
 	// =================== Inicialização conexão =====================
 
 	printf("Adentrando ao loop\n");
-	memset(&buffer_entrada, 0, sizeof buffer_entrada);
+	lb(buffer_entrada);
 
 	while (read(server_connection_socket, buffer_entrada, BUFFER_SIZE)){
 
 		sscanf(buffer_entrada,"%s %s", comando, argumento);
-
 		printf("Comando: %s - Argumento: %s\n", comando, argumento);
+
+		// se o comando for PORT
 		if(strcmp (comando, "PORT") == 0){
+			lb(buffer_entrada);
 			sscanf(buffer_entrada,"%s %s", comando, argumento);
 			printf("buffer_saida: %s", argumento);
 			int dados=connectPORT(argumento);
-			memset(buffer_saida, 0, sizeof buffer_saida);
+			lb(buffer_saida);
 			strcat(buffer_saida, "200 PORT command successful.\n");
 			printf("buffer_saida: %s", buffer_saida);
 			write(server_connection_socket, buffer_saida, strlen(buffer_saida));
-		}
-		if(strcmp (comando, "PASV") == 0){
+		}else if(strcmp (comando, "PASV") == 0){
 			sscanf(buffer_entrada,"%s %s", comando, argumento);
 			printf("buffer_saida: %s", argumento);
 
 			int dados =serverPorta(20);
-			memset(buffer_saida, 0, sizeof buffer_saida);
+			lb(buffer_saida);
 			strcat(buffer_saida, "227 Entering Passive Mode (192,168,150,90,195,149) .\n");
 			printf("buffer_saida: %s", buffer_saida);
 			write(server_connection_socket, buffer_saida, strlen(buffer_saida));
+		}else if(strcmp(comando, "QUIT") == 0){
+			printf("Encerrando conexao...\n");
+			break;
 		}
 
 
@@ -137,6 +136,11 @@ int start_server(int port) {
 		memset(&buffer_entrada, 0, sizeof buffer_entrada);
 	}
 	return server_connection_socket;
+}
+
+// limpar buffer de entrada ou saida
+void lb(char *buffer){
+	memset(buffer, 0, sizeof buffer);
 }
 
 //PASV  dados
@@ -174,8 +178,6 @@ int serverPorta(int port) {
  }
 return connection_socket;
 }
-
-
 
 int connectPORT(char  argumento[128]){
 			char a[3],b[3],c[3],d[3],pd[3],pe[3],porta[5], ip[15];
