@@ -226,6 +226,20 @@ int start_server(int port) {
 				close(data_transfer_socket);
 				close(pasv_listen_socket);
 			//=================================== LIST ====================================
+
+			//=================================== RETR ====================================
+			}else if(strcmp(comando, "RETR") == 0){
+				printf("Iniciando execucao de RETR\n");
+
+
+			//=================================== RETR ====================================
+
+			//=================================== STOR ====================================
+			}else if(strcmp(comando, "STOR") == 0){
+				printf("Iniciando execucao de STOR\n");
+
+
+			//=================================== STOR ====================================
 			}else if(strcmp(comando, "QUIT") == 0){
 				printf("Encerrando conexao...\n");
 				lb(buffer_saida);
