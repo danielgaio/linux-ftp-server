@@ -117,6 +117,10 @@ int start_server(int port) {
 				int ip[3], port[2];
 				sscanf(argumento, "%i,%i,%i,%i,%i,%i", &ip[0], &ip[1], &ip[2], &ip[3], &port[0], &port[1]);
 				int porta = port[0]*256+port[1];
+				char ip_char[16];
+				sprintf(ip_char, "%i.%i.%i.%i", ip[0], ip[1], ip[2], ip[3]);
+
+				printf("IP do cliente: %s, Porta: %i\n", ip_char, porta);
 
 				lb(buffer_saida);
 				strcat(buffer_saida, "200 PORT command successful.\n");
@@ -128,6 +132,7 @@ int start_server(int port) {
 
 				endereco_cliente.sin_family = AF_INET;
 				endereco_cliente.sin_port = htons(porta);
+				endereco_cliente.sin_addr.s_addr = inet_addr(ip_char);
 
 				if ((data_transfer_socket = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
 					printf("Erro ao criar o socket para executar o comando PORT \n");
@@ -181,6 +186,10 @@ int start_server(int port) {
 				
 				if(port_or_pasv == 0){
 					printf("LIST: modo PORT reconhecido\n");
+					lb(buffer_saida);
+					sprintf(buffer_saida, "150 Estou abrindo o modo ASCII para conexao de dados\n");
+					printf("buffer_saida: %s", buffer_saida);
+					write(server_connection_socket, buffer_saida, strlen(buffer_saida));
 				}else{
 					data_transfer_socket = aceitar_conexao(pasv_listen_socket);
 					printf("LIST: modo PASV reconhecido\n");
