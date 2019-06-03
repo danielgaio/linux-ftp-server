@@ -110,7 +110,7 @@ int start_server(int port) {
 
 			//=================================== PORT ====================================
 			if(strcmp (comando, "PORT") == 0){
-				
+
 				port_or_pasv = 0;	// setando flag para modo port
 				printf("Modo: PORT\n");
 
@@ -183,7 +183,7 @@ int start_server(int port) {
 				struct tm *tempo;
 				getcwd(endereco_diretorio_atual, BUFFER_SIZE);
 				DIR *pointer = opendir(endereco_diretorio_atual);
-				
+
 				if(port_or_pasv == 0){
 					printf("LIST: modo PORT reconhecido\n");
 					lb(buffer_saida);
@@ -210,7 +210,7 @@ int start_server(int port) {
 								"%c%s %5ld %4d %4d %8ld %s %s\r\n",
 								(entrada->d_type == DT_DIR) ? 'd' : '-',
 								perms, status_buffer.st_nlink,
-								status_buffer.st_uid, 
+								status_buffer.st_uid,
 								status_buffer.st_gid,
 								status_buffer.st_size,
 								buffer_tempo,
@@ -236,8 +236,36 @@ int start_server(int port) {
 
 			//=================================== STOR ====================================
 			}else if(strcmp(comando, "STOR") == 0){
+				printf(argumento);
 				printf("Iniciando execucao de STOR\n");
+				if(port_or_pasv == 0){
+					printf("LIST: modo PORT reconhecido\n");
+					lb(buffer_saida);
+					sprintf(buffer_saida, "150 Estou abrindo o modo ASCII para conexao de dados\n");
+					printf("buffer_saida: %s", buffer_saida);
+					write(server_connection_socket, buffer_saida, strlen(buffer_saida));
+				}else{
+					data_transfer_socket = aceitar_conexao(pasv_listen_socket);
+					printf("LIST: modo PASV reconhecido\n");
+				}
+				 FILE *pont_arq; // cria variável ponteiro para o arquivo
+					pont_arq = fopen(argumento, "w");
+				if(pont_arq == NULL)
+				  {
+				  printf("Erro na abertura do arquivo!");
+				  return 1;
+				  }
 
+					lb(buffer_entrada);
+				  read(data_transfer_socket, buffer_entrada, BUFFER_SIZE);
+				  //usando fprintf para armazenar a string no arquivo
+				  fprintf(pont_arq, "%s", buffer_entrada);
+				  fclose(pont_arq);
+					close(data_transfer_socket);
+					close(pasv_listen_socket);
+				//lb(buffer_entrada);
+			 // read(data_transfer_socket, buffer_entrada, BUFFER_SIZE);
+				//write(server_connection_socket, buffer_saida, strlen(buffer_saida));
 
 			//=================================== STOR ====================================
 			}else if(strcmp(comando, "QUIT") == 0){
@@ -263,17 +291,17 @@ void str_perm(int perm, char *str_perm){
   int curperm = 0;
   int flag = 0;
   int read, write, exec;
-  
+
   /* Flags buffer */
   char fbuff[4];
 
   read = write = exec = 0;
-  
+
   int i;
   for(i = 6; i >= 0; i -= 3){
     /* Explode permissions of user, group, others; starting with users */
     curperm = ((perm & ALLPERMS) >> i ) & 0x7;
-    
+
     memset(fbuff,0,3);
     /* Check rwx flags for each*/
     read = (curperm >> 2) & 0x1;
@@ -307,14 +335,14 @@ int create_pasv_listen_socket(int port){
 	address.sin_family = AF_INET;
 	address.sin_addr.s_addr = INADDR_ANY;
 	address.sin_port = htons( port );
- 	
+
 	if ((pasv_listen_socket = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
 	 	perror("A criacao do socket de escuta pasv falhou\n");
 	 	exit(EXIT_FAILURE);
  	}else{
 	 	printf("Socket de escuta em modo PASV criado\n");
  	}
- 
+
  	if (bind(pasv_listen_socket, (struct sockaddr *)&address, sizeof(address)) == -1) {
 	 	perror("bind failed\n");
 	 	exit(EXIT_FAILURE);
