@@ -240,6 +240,21 @@ int start_server(int port) {
 
 
 			//=================================== STOR ====================================
+
+			//=================================== TYPE ====================================
+			}else if(strcmp(comando, "TYPE") == 0){
+				printf("Iniciando execucao de TYPE\n");
+
+				if(strcmp(argumento, "I") == 0){
+					printf("Tipo de transferência: Image\n");
+				}
+
+				lb(buffer_saida);
+				sprintf(buffer_saida, "200 Alterando para o modo de transferencia binaria\n");
+				printf("buffer_saida: %s", buffer_saida);
+				write(server_connection_socket, buffer_saida, strlen(buffer_saida));
+
+			//=================================== TYPE ====================================
 			}else if(strcmp(comando, "QUIT") == 0){
 				printf("Encerrando conexao...\n");
 				lb(buffer_saida);
