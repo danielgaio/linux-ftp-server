@@ -9,6 +9,7 @@
 #include <dirent.h>
 #include <time.h>
 #include <arpa/inet.h>
+#include <fcntl.h>
 
 #define BUFFER_SIZE 1024
 
