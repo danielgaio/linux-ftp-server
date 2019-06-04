@@ -1,5 +1,62 @@
 #include "header.h"
 
+// ====================== ENVIO ARQUIVO ========================
+// função copiada de outro projeto
+#ifndef sendfile
+#define BUF_SIZE 8192
+ssize_t sendfile(int out_fd, int in_fd, off_t * offset, size_t count){
+    off_t orig;
+    char buf[BUF_SIZE];
+    size_t toRead, numRead, numSent, totSent;
+
+    if (offset != NULL) {
+        /* Save current file offset and set offset to value in '*offset' */
+        orig = lseek(in_fd, 0, SEEK_CUR);
+        if (orig == -1)
+            return -1;
+        if (lseek(in_fd, *offset, SEEK_SET) == -1)
+            return -1;
+    }
+
+    totSent = 0;
+    while (count > 0) {
+        toRead = (count < BUF_SIZE) ? count : BUF_SIZE;
+
+        numRead = read(in_fd, buf, toRead);
+
+        if (numRead == -1)
+            return -1;
+        if (numRead == 0)
+            break;                      /* EOF */
+
+        numSent = write(out_fd, buf, numRead);
+
+        if (numSent == -1)
+            return -1;
+        if (numSent == 0) {               /* Should never happen */
+            perror("sendfile: write() transferred 0 bytes");
+            exit(-1);
+        }
+
+        count -= numSent;
+        totSent += numSent;
+    }
+
+    if (offset != NULL) {
+        /* Return updated file offset in '*offset', and reset the file offset
+           to the value it had when we were called. */
+        *offset = lseek(in_fd, 0, SEEK_CUR);
+
+        if (*offset == -1)
+            return -1;
+        if (lseek(in_fd, orig, SEEK_SET) == -1)
+            return -1;
+    }
+    return totSent;
+}
+#endif
+// ====================== ENVIO ARQUIVO ========================
+
 int start_server(int port) {
 
 	// server_connection_socket é o que vai atender
@@ -230,7 +287,54 @@ int start_server(int port) {
 			//=================================== RETR ====================================
 			}else if(strcmp(comando, "RETR") == 0){
 				printf("Iniciando execucao de RETR\n");
+				// data_transfer_socket será usado para conexão
+				int fd_arquivo_transferencia;
+				struct stat status_buffer;
+				off_t offset_arquivo = 0;
+				int total_enviado = 0;
 
+				if(access(argumento, R_OK) == 0 && (fd_arquivo_transferencia = open(argumento, O_RDONLY))){	// checagem de permissão e abertura de arquivo
+					fstat(fd_arquivo_transferencia, &status_buffer);
+
+					if(port_or_pasv == 0){
+						printf("RETR: modo PORT reconhecido\n");
+						lb(buffer_saida);
+						sprintf(buffer_saida, "150 Estou abrindo o modo ASCII para conexao de dados\n");
+						printf("buffer_saida: %s", buffer_saida);
+						write(server_connection_socket, buffer_saida, strlen(buffer_saida));
+					}else{ // PASV mode
+						data_transfer_socket = aceitar_conexao(pasv_listen_socket);
+						printf("RETR: modo PASV reconhecido\n");
+						close(pasv_listen_socket);
+					}
+
+					if(total_enviado = sendfile(data_transfer_socket, fd_arquivo_transferencia, &offset_arquivo, status_buffer.st_size)){
+				
+						if(total_enviado != status_buffer.st_size){
+							perror("ftp_retr:sendfile");
+							exit(EXIT_SUCCESS);
+						}
+
+						lb(buffer_saida);
+						sprintf(buffer_saida, "226 Arquivo enviado com sucesso\n");
+						printf("buffer_saida: %s", buffer_saida);
+						write(server_connection_socket, buffer_saida, strlen(buffer_saida));
+					}else{
+						lb(buffer_saida);
+						sprintf(buffer_saida, "550 Ocorreu uma falha na leitura do arquivo\n");
+						printf("buffer_saida: %s", buffer_saida);
+						write(server_connection_socket, buffer_saida, strlen(buffer_saida));
+					}
+        		}else{
+					lb(buffer_saida);
+					sprintf(buffer_saida, "550 Ocorreu uma falha ao baixar o arquivo\n");
+					printf("buffer_saida: %s", buffer_saida);
+					write(server_connection_socket, buffer_saida, strlen(buffer_saida));
+        		}
+
+				close(fd_arquivo_transferencia);
+				close(data_transfer_socket);
+				close(pasv_listen_socket);
 
 			//=================================== RETR ====================================
 
@@ -268,6 +372,21 @@ int start_server(int port) {
 				//write(server_connection_socket, buffer_saida, strlen(buffer_saida));
 
 			//=================================== STOR ====================================
+
+			//=================================== TYPE ====================================
+			}else if(strcmp(comando, "TYPE") == 0){
+				printf("Iniciando execucao de TYPE\n");
+
+				if(strcmp(argumento, "I") == 0){
+					printf("Tipo de transferência: Image\n");
+				}
+
+				lb(buffer_saida);
+				sprintf(buffer_saida, "200 Alterando para o modo de transferencia binaria\n");
+				printf("buffer_saida: %s", buffer_saida);
+				write(server_connection_socket, buffer_saida, strlen(buffer_saida));
+
+			//=================================== TYPE ====================================
 			}else if(strcmp(comando, "QUIT") == 0){
 				printf("Encerrando conexao...\n");
 				lb(buffer_saida);
