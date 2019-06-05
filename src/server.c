@@ -1,5 +1,7 @@
 #include "header.h"
-
+#define O_RDONLY 00
+#define O_WRONLY 01
+#define O_RDWR 02
 // ====================== ENVIO ARQUIVO ========================
 // função copiada de outro projeto
 #ifndef sendfile
@@ -307,9 +309,14 @@ int start_server(int port) {
 						printf("RETR: modo PASV reconhecido\n");
 						close(pasv_listen_socket);
 					}
+          lb(buffer_saida);
+          sprintf(buffer_saida, "125 vou comesar a transferir \n");
+          printf("buffer_saida: %s", buffer_saida);
+          write(server_connection_socket, buffer_saida, strlen(buffer_saida));
+
 
 					if(total_enviado = sendfile(data_transfer_socket, fd_arquivo_transferencia, &offset_arquivo, status_buffer.st_size)){
-				
+
 						if(total_enviado != status_buffer.st_size){
 							perror("ftp_retr:sendfile");
 							exit(EXIT_SUCCESS);
@@ -338,10 +345,18 @@ int start_server(int port) {
 
 			//=================================== RETR ====================================
 
+
 			//=================================== STOR ====================================
 			}else if(strcmp(comando, "STOR") == 0){
+              #define _GNU_SOURCE
 				printf(argumento);
 				printf("Iniciando execucao de STOR\n");
+        int connection, fd;
+        off_t offset = 0;
+        int pipefd[2];
+        int res = 1;
+        const int buff_size = 8192;
+
 				if(port_or_pasv == 0){
 					printf("LIST: modo PORT reconhecido\n");
 					lb(buffer_saida);
@@ -352,24 +367,47 @@ int start_server(int port) {
 					data_transfer_socket = aceitar_conexao(pasv_listen_socket);
 					printf("LIST: modo PASV reconhecido\n");
 				}
-				 FILE *pont_arq; // cria variável ponteiro para o arquivo
-					pont_arq = fopen(argumento, "w");
-				if(pont_arq == NULL)
-				  {
-				  printf("Erro na abertura do arquivo!");
-				  return 1;
-				  }
+          if(pipe(pipefd)!=-1){
+      				 FILE *pont_arq; // cria variável ponteiro para o arquivo
+               lb(buffer_saida);
+               sprintf(buffer_saida, "125 Tranferencia de dados \n");
+               printf("buffer_saida: %s", buffer_saida);
+               write(server_connection_socket, buffer_saida, strlen(buffer_saida));
+      					pont_arq = fopen(argumento, "w");
+      				if(pont_arq == NULL)
+      				  {
+      				  printf("Erro na abertura do arquivo!");
+      				  return 1;
+      				  }
+                fd = fileno(pont_arq);
+                while ((res = splice(data_transfer_socket, 0, pipefd[1], NULL, buff_size, SPLICE_F_MORE | SPLICE_F_MOVE))>0){
+                  splice(pipefd[0], NULL, fd, 0, buff_size, SPLICE_F_MORE | SPLICE_F_MOVE);
+                }
+                if(res==-1){
+                  printf("Erro na abertura do arquivo!");
+                }else{
+                  lb(buffer_saida);
+                  sprintf(buffer_saida, "226 File send OK.\n");
+                  printf("buffer_saida: %s", buffer_saida);
+                  write(server_connection_socket, buffer_saida, strlen(buffer_saida));
+                }
+                close(connection);
+                close(fd);
 
 					lb(buffer_entrada);
-				  read(data_transfer_socket, buffer_entrada, BUFFER_SIZE);
+				  //read(data_transfer_socket, buffer_entrada, BUFFER_SIZE);
 				  //usando fprintf para armazenar a string no arquivo
-				  fprintf(pont_arq, "%s", buffer_entrada);
+				  //fprintf(pont_arq, "%s", buffer_entrada);
 				  fclose(pont_arq);
 					close(data_transfer_socket);
 					close(pasv_listen_socket);
 				//lb(buffer_entrada);
 			 // read(data_transfer_socket, buffer_entrada, BUFFER_SIZE);
 				//write(server_connection_socket, buffer_saida, strlen(buffer_saida));
+}
+
+
+
 
 			//=================================== STOR ====================================
 
