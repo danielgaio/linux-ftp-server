@@ -3,7 +3,7 @@
 #define O_WRONLY 01
 #define O_RDWR 02
 // ====================== ENVIO ARQUIVO ========================
-// função copiada de outro projeto
+// função copiada de outro projeto: //https://github.com/Siim/ftp
 #ifndef sendfile
 #define BUF_SIZE 8192
 ssize_t sendfile(int out_fd, int in_fd, off_t * offset, size_t count){
@@ -432,7 +432,8 @@ int start_server(int port) {
 				write(server_connection_socket, buffer_saida, strlen(buffer_saida));
 				printf("Mensagem enviada ao cliente: %s", buffer_saida);
 				close(server_connection_socket);
-				exit(0);
+				//exit(0);
+				break;
 			}
 			lb(comando);
 			lb(argumento);
@@ -443,7 +444,7 @@ int start_server(int port) {
 	return server_connection_socket;
 }
 
-// metodo copiado, é usado no LIST
+// metodo copiado, é usado no LIST: //https://github.com/Siim/ftp
 void str_perm(int perm, char *str_perm){
   int curperm = 0;
   int flag = 0;
