@@ -2,12 +2,14 @@
 #include "header.h"
 #include <errno.h>
 #define _GNU_SOURCE
+
 #define O_RDONLY 00
 #define O_WRONLY 01
 #define O_RDWR 02
 #ifndef sendfile
 #define BUF_SIZE 8192
-
+#include <fcntl.h>
+#define _GNU_SOURCE
 // ====================== ENVIO ARQUIVO ========================
 // função copiada de outro projeto
 
@@ -64,313 +66,296 @@ ssize_t sendfile(int out_fd, int in_fd, off_t * offset, size_t count){
 #endif
 // ====================== ENVIO ARQUIVO ========================
 //=========================Comandos ==========================
-void comados(int server_connection_socket){
-        if (FD_ISSET( server_connection_socket, &readfds))
-        {
-                // server_connection_socket é o que vai atender
-                int server_listen_socket, server_connection_socket;
+void comados(void * server_connection_socket){
+        int server_listen_socket = (int *) tmp;
 
-                //varias clientes
-                int client_socket[30],  max_clients = 30,   activity, i, valread, sd;
-                int max_sd;
+
+        // server_connection_socket é o que vai atender
+        int server_listen_socket;
+
+        //varias clientes
+        int client_socket[30],  max_clients = 30,   activity, i, valread, sd;
+        int max_sd;
                 //set of socket descriptors
-                fd_set readfds;
+        fd_set readfds;
 
-                int pasv_listen_socket, data_transfer_socket;
-                struct sockaddr_in address;
-                int addrlen = sizeof(address);
-                char buffer_entrada[BUFFER_SIZE], buffer_saida[BUFFER_SIZE];
-                char comando[8], argumento[128];
-                int port_or_pasv; // flag para o modo de execução, port = 0, pasv = 1
+        int pasv_listen_socket, data_transfer_socket;
+        struct sockaddr_in address;
+        int addrlen = sizeof(address);
+        char buffer_entrada[BUFFER_SIZE], buffer_saida[BUFFER_SIZE];
+        char comando[8], argumento[128];
+        int port_or_pasv;         // flag para o modo de execução, port = 0, pasv = 1
 
 
-                //Check if it was for closing , and also read the
-                //incoming message
-                if ((valread = read(server_connection_socket, buffer_entrada, BUFFER_SIZE)) == 0)
-                {
-                        //Somebody disconnected , get his details and print
-                        getpeername(server_connection_socket, (struct sockaddr*)&address, (socklen_t*)&addrlen);
-                        printf("Host disconnected , ip %s , port %d \n", inet_ntoa(address.sin_addr), ntohs(address.sin_port));
+        //Check if it was for closing , and also read the
+        //incoming message
+        if ((valread = read(server_connection_socket, buffer_entrada, BUFFER_SIZE)) == 0)
+        {
+                //Somebody disconnected , get his details and print
+                getpeername(server_connection_socket, (struct sockaddr*)&address, (socklen_t*)&addrlen);
+                printf("Host disconnected , ip %s , port %d \n", inet_ntoa(address.sin_addr), ntohs(address.sin_port));
 
-                        //Close the socket and mark as 0 in list for reuse
-                        close( server_connection_socket );
-                        client_socket[i] = 0;
-                }
+                //Close the socket and mark as 0 in list for reuse
+                close( server_connection_socket );
+                client_socket[i] = 0;
+        }
 
-                //Echo back the message that came in
-                else
-                {
-                        sscanf(buffer_entrada,"%s %s", comando, argumento);
-                        printf("Comando: %s - Argumento: %s\n", comando, argumento);
+        //Echo back the message that came in
+        else
+        {
+                sscanf(buffer_entrada,"%s %s", comando, argumento);
+                printf("Comando: %s - Argumento: %s\n", comando, argumento);
 
+                //=================================== PORT ====================================
+                if(strcmp (comando, "PORT") == 0) {
+
+                        port_or_pasv = 0;         // setando flag para modo port
+                        printf("Modo: PORT\n");
+
+                        int ip[3], port[2];
+                        sscanf(argumento, "%i,%i,%i,%i,%i,%i", &ip[0], &ip[1], &ip[2], &ip[3], &port[0], &port[1]);
+                        int porta = port[0]*256+port[1];
+                        char ip_char[16];
+                        sprintf(ip_char, "%i.%i.%i.%i", ip[0], ip[1], ip[2], ip[3]);
+
+                        printf("IP do cliente: %s, Porta: %i\n", ip_char, porta);
+
+                        lb(buffer_saida);
+                        strcat(buffer_saida, "200 PORT command successful.\n");
+                        printf("buffer_saida: %s\n", buffer_saida);
+                        write(server_connection_socket, buffer_saida, strlen(buffer_saida));
+
+                        // Agora fazer uma conexão no cliente
+                        struct sockaddr_in endereco_cliente;
+
+                        endereco_cliente.sin_family = AF_INET;
+                        endereco_cliente.sin_port = htons(porta);
+                        endereco_cliente.sin_addr.s_addr = inet_addr(ip_char);
+
+                        if ((data_transfer_socket = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+                                printf("Erro ao criar o socket para executar o comando PORT \n");
+                                return -1;
+                        }else{
+                                printf("Socket para transferir dados em modo PORT OK\n");
+                        }
+
+                        connect(data_transfer_socket, (struct sockaddr *)&endereco_cliente, sizeof(endereco_cliente));
+                        printf("Conectado ao cliente\n");
                         //=================================== PORT ====================================
-                        if(strcmp (comando, "PORT") == 0) {
 
-                                port_or_pasv = 0; // setando flag para modo port
-                                printf("Modo: PORT\n");
+                        //=================================== PASV ====================================
+                }else if(strcmp (comando, "PASV") == 0) {
 
-                                int ip[3], port[2];
-                                sscanf(argumento, "%i,%i,%i,%i,%i,%i", &ip[0], &ip[1], &ip[2], &ip[3], &port[0], &port[1]);
-                                int porta = port[0]*256+port[1];
-                                char ip_char[16];
-                                sprintf(ip_char, "%i.%i.%i.%i", ip[0], ip[1], ip[2], ip[3]);
+                        port_or_pasv = 1;
+                        printf("Modo: PASV\n");
+                        int ip[4];
+                        // gerar porta, p1, p2 é a porta de acordo com "p1*256+p2", 0xff= 255
+                        int p1 = 128 + (rand() % 64), p2 = rand() % 0xff;         // gera porta aleatoria
+                        printf("PASV porta gerada: %i\n", 256*p1+p2);
 
-                                printf("IP do cliente: %s, Porta: %i\n", ip_char, porta);
+                        pasv_listen_socket = create_pasv_listen_socket(256*p1+p2);         // vai passar um valor de porta calculado
+                        printf("Socket de escuta PASV criado: %i\n", pasv_listen_socket);
 
-                                lb(buffer_saida);
-                                strcat(buffer_saida, "200 PORT command successful.\n");
-                                printf("buffer_saida: %s\n", buffer_saida);
-                                write(server_connection_socket, buffer_saida, strlen(buffer_saida));
+                        // Resposta
+                        lb(buffer_saida);
+                        sprintf(buffer_saida, "227 Entrando no modo passivo (%d,%d,%d,%d,%d,%d)\n", ip[0], ip[1], ip[2], ip[3], p1, p2);
+                        printf("buffer_saida: %s", buffer_saida);
+                        write(server_connection_socket, buffer_saida, strlen(buffer_saida));
 
-                                // Agora fazer uma conexão no cliente
-                                struct sockaddr_in endereco_cliente;
+                        lb(buffer_saida);
+                        sprintf(buffer_saida, "150 Estou abrindo o modo ASCII para conexao de dados\n");
+                        printf("buffer_saida: %s", buffer_saida);
+                        write(server_connection_socket, buffer_saida, strlen(buffer_saida));
+                        //=================================== PASV ====================================
 
-                                endereco_cliente.sin_family = AF_INET;
-                                endereco_cliente.sin_port = htons(porta);
-                                endereco_cliente.sin_addr.s_addr = inet_addr(ip_char);
+                        //=================================== LIST ====================================
+                }else if(strcmp(comando, "LIST") == 0) {
 
-                                if ((data_transfer_socket = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
-                                        printf("Erro ao criar o socket para executar o comando PORT \n");
-                                        return -1;
-                                }else{
-                                        printf("Socket para transferir dados em modo PORT OK\n");
-                                }
+                        printf("Vamos executar o comando LIST\n");
 
-                                connect(data_transfer_socket, (struct sockaddr *)&endereco_cliente, sizeof(endereco_cliente));
-                                printf("Conectado ao cliente\n");
-                                //=================================== PORT ====================================
-
-                                //=================================== PASV ====================================
-                        }else if(strcmp (comando, "PASV") == 0) {
-
-                                port_or_pasv = 1;
-                                printf("Modo: PASV\n");
-                                int ip[4];
-                                // gerar porta, p1, p2 é a porta de acordo com "p1*256+p2", 0xff= 255
-                                int p1 = 128 + (rand() % 64), p2 = rand() % 0xff; // gera porta aleatoria
-                                printf("PASV porta gerada: %i\n", 256*p1+p2);
-
-                                pasv_listen_socket = create_pasv_listen_socket(256*p1+p2); // vai passar um valor de porta calculado
-                                printf("Socket de escuta PASV criado: %i\n", pasv_listen_socket);
-
-                                // Resposta
-                                lb(buffer_saida);
-                                sprintf(buffer_saida, "227 Entrando no modo passivo (%d,%d,%d,%d,%d,%d)\n", ip[0], ip[1], ip[2], ip[3], p1, p2);
-                                printf("buffer_saida: %s", buffer_saida);
-                                write(server_connection_socket, buffer_saida, strlen(buffer_saida));
-
+                        char endereco_diretorio_atual[BUFFER_SIZE];
+                        char buffer_tempo[80];
+                        struct dirent *entrada;
+                        struct stat status_buffer;
+                        time_t tempo_bruto;
+                        struct tm *tempo;
+                        getcwd(endereco_diretorio_atual, BUFFER_SIZE);
+                        DIR *pointer = opendir(endereco_diretorio_atual);
+                        if(port_or_pasv == 0) {
+                                printf("LIST: modo PORT reconhecido\n");
                                 lb(buffer_saida);
                                 sprintf(buffer_saida, "150 Estou abrindo o modo ASCII para conexao de dados\n");
                                 printf("buffer_saida: %s", buffer_saida);
                                 write(server_connection_socket, buffer_saida, strlen(buffer_saida));
-                                //=================================== PASV ====================================
-
-                                //=================================== LIST ====================================
-                        }else if(strcmp(comando, "LIST") == 0) {
-
-                                printf("Vamos executar o comando LIST\n");
-
-                                char endereco_diretorio_atual[BUFFER_SIZE];
-                                char buffer_tempo[80];
-                                struct dirent *entrada;
-                                struct stat status_buffer;
-                                time_t tempo_bruto;
-                                struct tm *tempo;
-                                getcwd(endereco_diretorio_atual, BUFFER_SIZE);
-                                DIR *pointer = opendir(endereco_diretorio_atual);
-
-                                if(port_or_pasv == 0) {
-                                        printf("LIST: modo PORT reconhecido\n");
-                                        lb(buffer_saida);
-                                        sprintf(buffer_saida, "150 Estou abrindo o modo ASCII para conexao de dados\n");
-                                        printf("buffer_saida: %s", buffer_saida);
-                                        write(server_connection_socket, buffer_saida, strlen(buffer_saida));
-                                }else{
-                                        data_transfer_socket = aceitar_conexao(pasv_listen_socket);
-                                        printf("LIST: modo PASV reconhecido\n");
-                                }
-
-                                while(entrada = readdir(pointer)) {
-                                        if(stat(entrada->d_name, &status_buffer) == -1) {
-                                                fprintf(stderr, "FTP: Erro ao ler status de arquivo...\n");
-                                        }else{
-                                                char *perms = malloc(9);
-                                                memset(perms, 0, 9);
-
-                                                tempo_bruto = status_buffer.st_mtime;
-                                                tempo = localtime(&tempo_bruto);
-                                                strftime(buffer_tempo, 80, "%b %d %H:%M", tempo);
-                                                str_perm((status_buffer.st_mode & ALLPERMS), perms);
-                                                dprintf(data_transfer_socket,
-                                                        "%c%s %5ld %4d %4d %8ld %s %s\r\n",
-                                                        (entrada->d_type == DT_DIR) ? 'd' : '-',
-                                                        perms, status_buffer.st_nlink,
-                                                        status_buffer.st_uid,
-                                                        status_buffer.st_gid,
-                                                        status_buffer.st_size,
-                                                        buffer_tempo,
-                                                        entrada->d_name);
-                                        }
-                                }
-
-                                lb(buffer_saida);
-                                sprintf(buffer_saida, "226 Lista de diretorios enviada\n");
-                                printf("buffer_saida: %s", buffer_saida);
-                                write(server_connection_socket, buffer_saida, strlen(buffer_saida));
-
-                                close(data_transfer_socket);
-                                close(pasv_listen_socket);
-                                //=================================== LIST ====================================
-
-                                //=================================== RETR ====================================
-                        }else if(strcmp(comando, "RETR") == 0) {
-                                printf("Iniciando execucao de RETR\n");
-                                // data_transfer_socket será usado para conexão
-                                int fd_arquivo_transferencia;
-                                struct stat status_buffer;
-                                off_t offset_arquivo = 0;
-                                int total_enviado = 0;
-
-                                if(access(argumento, R_OK) == 0 && (fd_arquivo_transferencia = open(argumento, O_RDONLY))) { // checagem de permissão e abertura de arquivo
-                                        fstat(fd_arquivo_transferencia, &status_buffer);
-
-                                        if(port_or_pasv == 0) {
-                                                printf("RETR: modo PORT reconhecido\n");
-                                                lb(buffer_saida);
-                                                sprintf(buffer_saida, "150 Estou abrindo o modo ASCII para conexao de dados\n");
-                                                printf("buffer_saida: %s", buffer_saida);
-                                                write(server_connection_socket, buffer_saida, strlen(buffer_saida));
-                                        }else{ // PASV mode
-                                                data_transfer_socket = aceitar_conexao(pasv_listen_socket);
-                                                printf("RETR: modo PASV reconhecido\n");
-                                                close(pasv_listen_socket);
-                                        }
-                                        lb(buffer_saida);
-                                        sprintf(buffer_saida, "125 vou comesar a transferir \n");
-                                        printf("buffer_saida: %s", buffer_saida);
-                                        write(server_connection_socket, buffer_saida, strlen(buffer_saida));
-
-
-                                        if(total_enviado = sendfile(data_transfer_socket, fd_arquivo_transferencia, &offset_arquivo, status_buffer.st_size)) {
-
-                                                if(total_enviado != status_buffer.st_size) {
-                                                        perror("ftp_retr:sendfile");
-                                                        exit(EXIT_SUCCESS);
-                                                }
-
-                                                lb(buffer_saida);
-                                                sprintf(buffer_saida, "226 Arquivo enviado com sucesso\n");
-                                                printf("buffer_saida: %s", buffer_saida);
-                                                write(server_connection_socket, buffer_saida, strlen(buffer_saida));
-                                        }else{
-                                                lb(buffer_saida);
-                                                sprintf(buffer_saida, "550 Ocorreu uma falha na leitura do arquivo\n");
-                                                printf("buffer_saida: %s", buffer_saida);
-                                                write(server_connection_socket, buffer_saida, strlen(buffer_saida));
-                                        }
-                                }else{
-                                        lb(buffer_saida);
-                                        sprintf(buffer_saida, "550 Ocorreu uma falha ao baixar o arquivo\n");
-                                        printf("buffer_saida: %s", buffer_saida);
-                                        write(server_connection_socket, buffer_saida, strlen(buffer_saida));
-                                }
-
-                                close(fd_arquivo_transferencia);
-                                close(data_transfer_socket);
-                                close(pasv_listen_socket);
-
-                                //=================================== RETR ====================================
-
-
-                                //=================================== STOR ====================================
-                        }else if(strcmp(comando, "STOR") == 0) {
-
-                                printf(argumento);
-                                printf("Iniciando execucao de STOR\n");
-                                int connection, fd;
-                                off_t offset = 0;
-                                int pipefd[2];
-                                int res = 1;
-                                const int buff_size = 8192;
-
-                                if(port_or_pasv == 0) {
-                                        printf("LIST: modo PORT reconhecido\n");
-                                        lb(buffer_saida);
-                                        sprintf(buffer_saida, "150 Estou abrindo o modo ASCII para conexao de dados\n");
-                                        printf("buffer_saida: %s", buffer_saida);
-                                        write(server_connection_socket, buffer_saida, strlen(buffer_saida));
-                                }else{
-                                        data_transfer_socket = aceitar_conexao(pasv_listen_socket);
-                                        printf("LIST: modo PASV reconhecido\n");
-                                }
-                                if(pipe(pipefd)!=-1) {
-                                        FILE *pont_arq; // cria variável ponteiro para o arquivo
-                                        lb(buffer_saida);
-                                        sprintf(buffer_saida, "125 Tranferencia de dados \n");
-                                        printf("buffer_saida: %s", buffer_saida);
-                                        write(server_connection_socket, buffer_saida, strlen(buffer_saida));
-                                        pont_arq = fopen(argumento, "w");
-                                        if(pont_arq == NULL)
-                                        {
-                                                printf("Erro na abertura do arquivo!");
-                                                return 1;
-                                        }
-                                        fd = fileno(pont_arq);
-                                        while ((res = splice(data_transfer_socket, 0, pipefd[1], NULL, buff_size, SPLICE_F_MORE | SPLICE_F_MOVE))>0) {
-                                                splice(pipefd[0], NULL, fd, 0, buff_size, SPLICE_F_MORE | SPLICE_F_MOVE);
-                                        }
-                                        if(res==-1) {
-                                                printf("Erro na abertura do arquivo!");
-                                        }else{
-                                                lb(buffer_saida);
-                                                sprintf(buffer_saida, "226 File send OK.\n");
-                                                printf("buffer_saida: %s", buffer_saida);
-                                                write(server_connection_socket, buffer_saida, strlen(buffer_saida));
-                                        }
-                                        close(connection);
-                                        close(fd);
-
-                                        lb(buffer_entrada);
-                                        //read(data_transfer_socket, buffer_entrada, BUFFER_SIZE);
-                                        //usando fprintf para armazenar a string no arquivo
-                                        //fprintf(pont_arq, "%s", buffer_entrada);
-                                        fclose(pont_arq);
-                                        close(data_transfer_socket);
-                                        close(pasv_listen_socket);
-                                        //lb(buffer_entrada);
-                                        // read(data_transfer_socket, buffer_entrada, BUFFER_SIZE);
-                                        //write(server_connection_socket, buffer_saida, strlen(buffer_saida));
-                                }
-                                //=================================== STOR ====================================
-
-                                //=================================== TYPE ====================================
-                        }else if(strcmp(comando, "TYPE") == 0) {
-                                printf("Iniciando execucao de TYPE\n");
-
-                                if(strcmp(argumento, "I") == 0) {
-                                        printf("Tipo de transferência: Image\n");
-                                }
-
-                                lb(buffer_saida);
-                                sprintf(buffer_saida, "200 Alterando para o modo de transferencia binaria\n");
-                                printf("buffer_saida: %s", buffer_saida);
-                                write(server_connection_socket, buffer_saida, strlen(buffer_saida));
-
-                                //=================================== TYPE ====================================
-                        }else if(strcmp(comando, "QUIT") == 0) {
-                                printf("Encerrando conexao...\n");
-                                lb(buffer_saida);
-                                sprintf(buffer_saida, "221 Tchau tchau do servidor\n");
-                                write(server_connection_socket, buffer_saida, strlen(buffer_saida));
-                                printf("Mensagem enviada ao cliente: %s", buffer_saida);
-                                close(server_connection_socket);
-                                client_socket[i] = 0;
-                                //exit(0);
+                        }else{
+                                data_transfer_socket = aceitar_conexao(pasv_listen_socket);
+                                printf("LIST: modo PASV reconhecido\n");
                         }
-                        lb(comando);
-                        lb(argumento);
-                        lb(buffer_entrada);
+                        while(entrada = readdir(pointer)) {
+                                if(stat(entrada->d_name, &status_buffer) == -1) {
+                                        fprintf(stderr, "FTP: Erro ao ler status de arquivo...\n");
+                                }else{
+                                        char *perms = malloc(9);
+                                        memset(perms, 0, 9);
+                                        tempo_bruto = status_buffer.st_mtime;
+                                        tempo = localtime(&tempo_bruto);
+                                        strftime(buffer_tempo, 80, "%b %d %H:%M", tempo);
+                                        str_perm((status_buffer.st_mode & ALLPERMS), perms);
+                                        dprintf(data_transfer_socket,
+                                                "%c%s %5ld %4d %4d %8ld %s %s\r\n",
+                                                (entrada->d_type == DT_DIR) ? 'd' : '-',
+                                                perms, status_buffer.st_nlink,
+                                                status_buffer.st_uid,
+                                                status_buffer.st_gid,
+                                                status_buffer.st_size,
+                                                buffer_tempo,
+                                                entrada->d_name);
+                                }
+                        }
+                        lb(buffer_saida);
+                        sprintf(buffer_saida, "226 Lista de diretorios enviada\n");
+                        printf("buffer_saida: %s", buffer_saida);
+                        write(server_connection_socket, buffer_saida, strlen(buffer_saida));
+                        close(data_transfer_socket);
+                        close(pasv_listen_socket);
+                        //=================================== LIST ====================================
+
+                        //=================================== RETR ====================================
+                }else if(strcmp(comando, "RETR") == 0) {
+                        printf("Iniciando execucao de RETR\n");
+                        // data_transfer_socket será usado para conexão
+                        int fd_arquivo_transferencia;
+                        struct stat status_buffer;
+                        off_t offset_arquivo = 0;
+                        int total_enviado = 0;
+                        if(access(argumento, R_OK) == 0 && (fd_arquivo_transferencia = open(argumento, O_RDONLY))) {         // checagem de permissão e abertura de arquivo
+                                fstat(fd_arquivo_transferencia, &status_buffer);
+                                if(port_or_pasv == 0) {
+                                        printf("RETR: modo PORT reconhecido\n");
+                                        lb(buffer_saida);
+                                        sprintf(buffer_saida, "150 Estou abrindo o modo ASCII para conexao de dados\n");
+                                        printf("buffer_saida: %s", buffer_saida);
+                                        write(server_connection_socket, buffer_saida, strlen(buffer_saida));
+                                }else{         // PASV mode
+                                        data_transfer_socket = aceitar_conexao(pasv_listen_socket);
+                                        printf("RETR: modo PASV reconhecido\n");
+                                        close(pasv_listen_socket);
+                                }
+                                lb(buffer_saida);
+                                sprintf(buffer_saida, "125 vou comesar a transferir \n");
+                                printf("buffer_saida: %s", buffer_saida);
+                                write(server_connection_socket, buffer_saida, strlen(buffer_saida));
+                                if(total_enviado = sendfile(data_transfer_socket, fd_arquivo_transferencia, &offset_arquivo, status_buffer.st_size)) {
+                                        if(total_enviado != status_buffer.st_size) {
+                                                perror("ftp_retr:sendfile");
+                                                exit(EXIT_SUCCESS);
+                                        }
+                                        lb(buffer_saida);
+                                        sprintf(buffer_saida, "226 Arquivo enviado com sucesso\n");
+                                        printf("buffer_saida: %s", buffer_saida);
+                                        write(server_connection_socket, buffer_saida, strlen(buffer_saida));
+                                }else{
+                                        lb(buffer_saida);
+                                        sprintf(buffer_saida, "550 Ocorreu uma falha na leitura do arquivo\n");
+                                        printf("buffer_saida: %s", buffer_saida);
+                                        write(server_connection_socket, buffer_saida, strlen(buffer_saida));
+                                }
+                        }else{
+                                lb(buffer_saida);
+                                sprintf(buffer_saida, "550 Ocorreu uma falha ao baixar o arquivo\n");
+                                printf("buffer_saida: %s", buffer_saida);
+                                write(server_connection_socket, buffer_saida, strlen(buffer_saida));
+                        }
+                        close(fd_arquivo_transferencia);
+                        close(data_transfer_socket);
+                        close(pasv_listen_socket);
+
+                        //=================================== RETR ====================================
+
+
+                        //=================================== STOR ====================================
+                }else if(strcmp(comando, "STOR") == 0) {
+                        printf(argumento);
+                        printf("Iniciando execucao de STOR\n");
+                        int connection, fd;
+                        off_t offset = 0;
+                        int pipefd[2];
+                        int res = 1;
+                        const int buff_size = 8192;
+                        if(port_or_pasv == 0) {
+                                printf("LIST: modo PORT reconhecido\n");
+                                lb(buffer_saida);
+                                sprintf(buffer_saida, "150 Estou abrindo o modo ASCII para conexao de dados\n");
+                                printf("buffer_saida: %s", buffer_saida);
+                                write(server_connection_socket, buffer_saida, strlen(buffer_saida));
+                        }else{
+                                data_transfer_socket = aceitar_conexao(pasv_listen_socket);
+                                printf("LIST: modo PASV reconhecido\n");
+                        }
+                        if(pipe(pipefd)!=-1) {
+                                FILE *pont_arq;         // cria variável ponteiro para o arquivo
+                                lb(buffer_saida);
+                                sprintf(buffer_saida, "125 Tranferencia de dados \n");
+                                printf("buffer_saida: %s", buffer_saida);
+                                write(server_connection_socket, buffer_saida, strlen(buffer_saida));
+                                pont_arq = fopen(argumento, "w");
+                                if(pont_arq == NULL)
+                                {
+                                        printf("Erro na abertura do arquivo!");
+                                        return 1;
+                                }
+                                fd = fileno(pont_arq);
+                                while ((res = splice(data_transfer_socket, 0, pipefd[1], NULL, buff_size, SPLICE_F_MORE | SPLICE_F_MOVE))>0) {
+                                        splice(pipefd[0], NULL, fd, 0, buff_size, SPLICE_F_MORE | SPLICE_F_MOVE);
+                                }
+                                if(res==-1) {
+                                        printf("Erro na abertura do arquivo!");
+                                }else{
+                                        lb(buffer_saida);
+                                        sprintf(buffer_saida, "226 File send OK.\n");
+                                        printf("buffer_saida: %s", buffer_saida);
+                                        write(server_connection_socket, buffer_saida, strlen(buffer_saida));
+                                }
+                                close(connection);
+                                close(fd);
+                                lb(buffer_entrada);
+                                //read(data_transfer_socket, buffer_entrada, BUFFER_SIZE);
+                                //usando fprintf para armazenar a string no arquivo
+                                //fprintf(pont_arq, "%s", buffer_entrada);
+                                fclose(pont_arq);
+                                close(data_transfer_socket);
+                                close(pasv_listen_socket);
+                                //lb(buffer_entrada);
+                                // read(data_transfer_socket, buffer_entrada, BUFFER_SIZE);
+                                //write(server_connection_socket, buffer_saida, strlen(buffer_saida));
+                        }
+                        //=================================== STOR ====================================
+
+                        //=================================== TYPE ====================================
+                }else if(strcmp(comando, "TYPE") == 0) {
+                        printf("Iniciando execucao de TYPE\n");
+                        if(strcmp(argumento, "I") == 0) {
+                                printf("Tipo de transferência: Image\n");
+                        }
+                        lb(buffer_saida);
+                        sprintf(buffer_saida, "200 Alterando para o modo de transferencia binaria\n");
+                        printf("buffer_saida: %s", buffer_saida);
+                        write(server_connection_socket, buffer_saida, strlen(buffer_saida));
+                        //=================================== TYPE ====================================
+                }else if(strcmp(comando, "QUIT") == 0) {
+                        printf("Encerrando conexao...\n");
+                        lb(buffer_saida);
+                        sprintf(buffer_saida, "221 Tchau tchau do servidor\n");
+                        write(server_connection_socket, buffer_saida, strlen(buffer_saida));
+                        printf("Mensagem enviada ao cliente: %s", buffer_saida);
+                        close(server_connection_socket);
+                      //  client_socket[i] = 0;
+                        //exit(0);
                 }
+                lb(comando);
+                lb(argumento);
+                lb(buffer_entrada);
+
         }
 }
 
@@ -385,7 +370,6 @@ int start_server(int port) {
         int max_sd;
         //set of socket descriptors
         fd_set readfds;
-
 
         //threads
         pthread_t linhas[30];
@@ -545,7 +529,10 @@ int start_server(int port) {
                 for (i = 0; i < max_clients; i++)
                 {
                         server_connection_socket = client_socket[i];
-                        pthread_create(&linhas[i],NULL,comados,server_connection_socket);
+                        if (FD_ISSET( server_connection_socket, &readfds))
+                        {
+                          pthread_create(&linhas[i],NULL,comados,void* (*)(void*)server_connection_socket);
+                        }
                 }
         }
         return server_connection_socket;
@@ -582,7 +569,7 @@ void str_perm(int perm, char *str_perm){
 int aceitar_conexao(int socket){
         struct sockaddr_in endereco_cliente;
         int addrlen = sizeof(endereco_cliente);
-        return accept(socket, (struct sockaddr*) &endereco_cliente, &addrlen);
+        return accept(socket, (struct sockaddr*) &endereco_cliente,(socklen_t*)&addrlen);
 }
 
 // limpar buffer de entrada ou saida
