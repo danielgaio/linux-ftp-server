@@ -1,15 +1,12 @@
-
 #include "header.h"
 #include <errno.h>
-#define _GNU_SOURCE
-
 #define O_RDONLY 00
 #define O_WRONLY 01
 #define O_RDWR 02
 #ifndef sendfile
 #define BUF_SIZE 8192
 #include <fcntl.h>
-#define _GNU_SOURCE
+
 // ====================== ENVIO ARQUIVO ========================
 // função copiada de outro projeto
 
@@ -66,40 +63,38 @@ ssize_t sendfile(int out_fd, int in_fd, off_t * offset, size_t count){
 #endif
 // ====================== ENVIO ARQUIVO ========================
 //=========================Comandos ==========================
-void comados(void * server_connection_socket){
-        int server_listen_socket = (int *) tmp;
-
-
+//void comandos(void * tmp){
+void comandos(int server_connection_socket){
+        //struct deusEnderecos  * tmpst=(struct deusEnderecos *)tmp;
+        //struct sockaddr_in address = tmpst->address;
+        //int server_connection_socket = tmpst->cliente;
         // server_connection_socket é o que vai atender
-        int server_listen_socket;
-
+      //  int server_connection_socket= (int *)tmp;
         //varias clientes
-        int client_socket[30],  max_clients = 30,   activity, i, valread, sd;
-        int max_sd;
-                //set of socket descriptors
-        fd_set readfds;
+        int valread;
+        //set of socket descriptors
+
 
         int pasv_listen_socket, data_transfer_socket;
-        struct sockaddr_in address;
+
         int addrlen = sizeof(address);
         char buffer_entrada[BUFFER_SIZE], buffer_saida[BUFFER_SIZE];
         char comando[8], argumento[128];
         int port_or_pasv;         // flag para o modo de execução, port = 0, pasv = 1
 
-
         //Check if it was for closing , and also read the
         //incoming message
+        lb(buffer_entrada);
         if ((valread = read(server_connection_socket, buffer_entrada, BUFFER_SIZE)) == 0)
         {
                 //Somebody disconnected , get his details and print
                 getpeername(server_connection_socket, (struct sockaddr*)&address, (socklen_t*)&addrlen);
                 printf("Host disconnected , ip %s , port %d \n", inet_ntoa(address.sin_addr), ntohs(address.sin_port));
-
                 //Close the socket and mark as 0 in list for reuse
-                close( server_connection_socket );
-                client_socket[i] = 0;
+                close(server_connection_socket );
+                //      tmp=0;
+                //    client_socket[i] = 0;
         }
-
         //Echo back the message that came in
         else
         {
@@ -316,7 +311,7 @@ void comados(void * server_connection_socket){
                                         printf("buffer_saida: %s", buffer_saida);
                                         write(server_connection_socket, buffer_saida, strlen(buffer_saida));
                                 }
-                                close(connection);
+                                //close(connection);
                                 close(fd);
                                 lb(buffer_entrada);
                                 //read(data_transfer_socket, buffer_entrada, BUFFER_SIZE);
@@ -325,7 +320,7 @@ void comados(void * server_connection_socket){
                                 fclose(pont_arq);
                                 close(data_transfer_socket);
                                 close(pasv_listen_socket);
-                                //lb(buffer_entrada);
+                                lb(buffer_entrada);
                                 // read(data_transfer_socket, buffer_entrada, BUFFER_SIZE);
                                 //write(server_connection_socket, buffer_saida, strlen(buffer_saida));
                         }
@@ -349,7 +344,7 @@ void comados(void * server_connection_socket){
                         write(server_connection_socket, buffer_saida, strlen(buffer_saida));
                         printf("Mensagem enviada ao cliente: %s", buffer_saida);
                         close(server_connection_socket);
-                      //  client_socket[i] = 0;
+                        //  client_socket[i] = 0;
                         //exit(0);
                 }
                 lb(comando);
@@ -364,9 +359,8 @@ int start_server(int port) {
 
         // server_connection_socket é o que vai atender
         int server_listen_socket, server_connection_socket;
-
         //varias clientes
-        int client_socket[30],  max_clients = 30,   activity, i, valread, sd;
+        int client_socket[30], max_clients = 30,activity,i,valread, sd;
         int max_sd;
         //set of socket descriptors
         fd_set readfds;
@@ -376,7 +370,7 @@ int start_server(int port) {
 
 
         int pasv_listen_socket, data_transfer_socket;
-        struct sockaddr_in address;
+        //  struct sockaddr_in address;
         int addrlen = sizeof(address);
         char buffer_entrada[BUFFER_SIZE], buffer_saida[BUFFER_SIZE];
         char comando[8], argumento[128];
@@ -408,7 +402,7 @@ int start_server(int port) {
         address.sin_addr.s_addr = INADDR_ANY;
         // The htons() function converts the unsigned short integer hostshort from
         //     host byte order to network byte order.
-        address.sin_port = htons(port );
+        address.sin_port = htons(port);
 
         // int bind(int sockfd, const struct sockaddr *addr,
         //              socklen_t addrlen);
@@ -528,10 +522,14 @@ int start_server(int port) {
                 lb(buffer_entrada);
                 for (i = 0; i < max_clients; i++)
                 {
-                        server_connection_socket = client_socket[i];
-                        if (FD_ISSET( server_connection_socket, &readfds))
+                        server_connection_socket=client_socket[i];
+                        if (FD_ISSET(server_connection_socket, &readfds))
                         {
-                          pthread_create(&linhas[i],NULL,comados,void* (*)(void*)server_connection_socket);
+                                //    struct deusEnderecos *dados;
+                                //    dados->address=address;
+                                //      dados->cliente=server_connection_socket;
+                                //    pthread_create(&linhas[i],NULL,comandos,(void*)server_connection_socket);
+                                comandos(server_connection_socket);
                         }
                 }
         }

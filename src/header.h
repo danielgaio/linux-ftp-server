@@ -14,11 +14,13 @@
 #include <pthread.h>
 
 #define BUFFER_SIZE 1024
+struct sockaddr_in address;
 
 
-int start_server(int port);
 void lb(char *buffer);
 int create_pasv_listen_socket(int port);
 int aceitar_conexao(int socket);
 void str_perm(int perm, char *str_perm);
-void comados(int server_connection_socket);
+void comandos(int server_connection_socket);
+
+int start_server(int port);
