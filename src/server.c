@@ -10,6 +10,80 @@
 // ====================== ENVIO ARQUIVO ========================
 // função copiada de outro projeto
 
+// metodo copiado, é usado no LIST
+void str_perm(int perm, char *str_perm){
+        int curperm = 0;
+        int flag = 0;
+        int read, write, exec;
+
+        /* Flags buffer */
+        char fbuff[4];
+
+        read = write = exec = 0;
+
+        int i;
+        for(i = 6; i >= 0; i -= 3) {
+                /* Explode permissions of user, group, others; starting with users */
+                curperm = ((perm & ALLPERMS) >> i ) & 0x7;
+
+                memset(fbuff,0,3);
+                /* Check rwx flags for each*/
+                read = (curperm >> 2) & 0x1;
+                write = (curperm >> 1) & 0x1;
+                exec = (curperm >> 0) & 0x1;
+
+                sprintf(fbuff, "%c%c%c", read ? 'r' : '-', write ? 'w' : '-', exec ? 'x' : '-');
+                strcat(str_perm, fbuff);
+
+        }
+}
+
+int aceitar_conexao(int socket){
+        struct sockaddr_in endereco_cliente;
+        int addrlen = sizeof(endereco_cliente);
+        return accept(socket, (struct sockaddr*) &endereco_cliente,(socklen_t*)&addrlen);
+}
+
+// limpar buffer de entrada ou saida
+void lb(char *buffer){
+        memset(buffer, 0, sizeof buffer);
+}
+
+//PASV  dados
+int create_pasv_listen_socket(int port){
+        int pasv_listen_socket;
+        struct sockaddr_in address;
+        int addrlen = sizeof(address);
+        address.sin_family = AF_INET;
+        address.sin_addr.s_addr = INADDR_ANY;
+        address.sin_port = htons( port );
+
+        if ((pasv_listen_socket = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
+                perror("A criacao do socket de escuta pasv falhou\n");
+                exit(EXIT_FAILURE);
+        }else{
+                printf("Socket de escuta em modo PASV criado\n");
+        }
+
+        if (bind(pasv_listen_socket, (struct sockaddr *)&address, sizeof(address)) == -1) {
+                perror("bind failed\n");
+                exit(EXIT_FAILURE);
+        }else{
+                printf("Bind executado com sucesso\n");
+        }
+
+        if (listen(pasv_listen_socket, 3) == -1) {
+                perror("listen\n");
+                exit(EXIT_FAILURE);
+        }else{
+                printf("Comando Listen() executado com sucesso\n");
+        }
+
+        // retornar o socket escutando, fazer os aceites no if
+        return pasv_listen_socket;
+}
+
+
 ssize_t sendfile(int out_fd, int in_fd, off_t * offset, size_t count){
         off_t orig;
         char buf[BUF_SIZE];
@@ -53,6 +127,7 @@ ssize_t sendfile(int out_fd, int in_fd, off_t * offset, size_t count){
                    to the value it had when we were called. */
                 *offset = lseek(in_fd, 0, SEEK_CUR);
 
+
                 if (*offset == -1)
                         return -1;
                 if (lseek(in_fd, orig, SEEK_SET) == -1)
@@ -64,23 +139,37 @@ ssize_t sendfile(int out_fd, int in_fd, off_t * offset, size_t count){
 // ====================== ENVIO ARQUIVO ========================
 //=========================Comandos ==========================
 //void comandos(void * tmp){
-void comandos(int server_connection_socket){
+void comandos(void *dados){
+        struct dadosConecao * dclientes= (struct dadosConecao *) dados;
+        printf("Cliente%i\n",dclientes->socketCliente);
+        printf("pasvdatos%i\n",dclientes->pasv_listen_socket);
+        printf("datadatos%i\n",dclientes->data_transfer_socket);
+        printf("por ou pasv%i\n",dclientes->port_or_pasv);
         //struct deusEnderecos  * tmpst=(struct deusEnderecos *)tmp;
         //struct sockaddr_in address = tmpst->address;
         //int server_connection_socket = tmpst->cliente;
         // server_connection_socket é o que vai atender
-      //  int server_connection_socket= (int *)tmp;
+        //  int server_connection_socket= (int *)tmp;
+
         //varias clientes
         int valread;
         //set of socket descriptors
+        int server_connection_socket=dclientes->socketCliente;
 
 
-        int pasv_listen_socket, data_transfer_socket;
+        int pasv_listen_socket=0, data_transfer_socket=0;
+
+        pasv_listen_socket=dclientes->pasv_listen_socket;
+
+        data_transfer_socket=dclientes->data_transfer_socket;
+
+
+        int port_or_pasv=dclientes->port_or_pasv;
 
         int addrlen = sizeof(address);
         char buffer_entrada[BUFFER_SIZE], buffer_saida[BUFFER_SIZE];
         char comando[8], argumento[128];
-        int port_or_pasv;         // flag para o modo de execução, port = 0, pasv = 1
+        // flag para o modo de execução, port = 0, pasv = 1
 
         //Check if it was for closing , and also read the
         //incoming message
@@ -129,12 +218,13 @@ void comandos(int server_connection_socket){
 
                         if ((data_transfer_socket = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
                                 printf("Erro ao criar o socket para executar o comando PORT \n");
-                                return -1;
+                                //return -1;
                         }else{
                                 printf("Socket para transferir dados em modo PORT OK\n");
                         }
 
                         connect(data_transfer_socket, (struct sockaddr *)&endereco_cliente, sizeof(endereco_cliente));
+                        dclientes->data_transfer_socket=data_transfer_socket;
                         printf("Conectado ao cliente\n");
                         //=================================== PORT ====================================
 
@@ -161,6 +251,8 @@ void comandos(int server_connection_socket){
                         sprintf(buffer_saida, "150 Estou abrindo o modo ASCII para conexao de dados\n");
                         printf("buffer_saida: %s", buffer_saida);
                         write(server_connection_socket, buffer_saida, strlen(buffer_saida));
+                        dclientes->pasv_listen_socket=pasv_listen_socket;
+                        dclientes->port_or_pasv=port_or_pasv;
                         //=================================== PASV ====================================
 
                         //=================================== LIST ====================================
@@ -297,7 +389,7 @@ void comandos(int server_connection_socket){
                                 if(pont_arq == NULL)
                                 {
                                         printf("Erro na abertura do arquivo!");
-                                        return 1;
+                                        //return 1;
                                 }
                                 fd = fileno(pont_arq);
                                 while ((res = splice(data_transfer_socket, 0, pipefd[1], NULL, buff_size, SPLICE_F_MORE | SPLICE_F_MOVE))>0) {
@@ -344,14 +436,18 @@ void comandos(int server_connection_socket){
                         write(server_connection_socket, buffer_saida, strlen(buffer_saida));
                         printf("Mensagem enviada ao cliente: %s", buffer_saida);
                         close(server_connection_socket);
-                        //  client_socket[i] = 0;
-                        //exit(0);
+                        dclientes->socketCliente=0;
+                        dclientes->pasv_listen_socket=0;
+                        dclientes->data_transfer_socket=0;
+                        dclientes->port_or_pasv=0;
                 }
                 lb(comando);
                 lb(argumento);
                 lb(buffer_entrada);
 
         }
+
+
 }
 
 
@@ -367,6 +463,15 @@ int start_server(int port) {
 
         //threads
         pthread_t linhas[30];
+        struct dadosConecao **dcliente;
+        dcliente=(struct dadosConecao**) malloc (30 * sizeof (struct dadosConecao));
+        for (int i = 0; i <30; ++i) {
+                dcliente[i]=(struct dadosConecao*) malloc(sizeof(struct dadosConecao));
+                dcliente[i]->socketCliente=0;
+                dcliente[i]->pasv_listen_socket=0;
+                dcliente[i]->data_transfer_socket=0;
+                dcliente[i]->port_or_pasv=0;
+        }
 
 
         int pasv_listen_socket, data_transfer_socket;
@@ -380,7 +485,7 @@ int start_server(int port) {
 ///Iniciando  a lista de multiplos crientes
         for (i = 0; i < max_clients; i++)
         {
-                client_socket[i] = 0;
+                dcliente[i]->socketCliente = 0;
         }
 
 
@@ -442,7 +547,7 @@ int start_server(int port) {
                 for ( i = 0; i < max_clients; i++)
                 {
                         //socket descriptor
-                        sd = client_socket[i];
+                        sd = dcliente[i]->socketCliente;
                         //if valid socket descriptor then add to read list
                         if(sd > 0)
                                 FD_SET( sd, &readfds);
@@ -508,11 +613,13 @@ int start_server(int port) {
                         for (i = 0; i < max_clients; i++)
                         {
                                 //if position is empty
-                                if( client_socket[i] == 0 )
+                                if( dcliente[i]->socketCliente == 0 )
                                 {
-                                        client_socket[i] = server_connection_socket;
+                                       dcliente[i]->socketCliente=server_connection_socket;
+                                      printf("Cliente%i\n",server_connection_socket);
+                                      printf("vvvCliente%i\n",dcliente[i]->socketCliente);
+                                      //client_socket[i] = server_connection_socket;
                                         printf("Adding to list of sockets as %d\n", i);
-
                                         break;
                                 }
                         }
@@ -520,96 +627,29 @@ int start_server(int port) {
                 //else its some IO operation on some other socket
                 printf("Adentrando ao loop\n");
                 lb(buffer_entrada);
-                for (i = 0; i < max_clients; i++)
+                for (int i = 0; i < max_clients; i++)
                 {
-                        server_connection_socket=client_socket[i];
-                        if (FD_ISSET(server_connection_socket, &readfds))
+                //  printf("no for loop\n");
+                        if (FD_ISSET(dcliente[i]->socketCliente, &readfds))
                         {
+                          //  printf("entrei  no  if\n");
                                 //    struct deusEnderecos *dados;
                                 //    dados->address=address;
                                 //      dados->cliente=server_connection_socket;
-                                //    pthread_create(&linhas[i],NULL,comandos,(void*)server_connection_socket);
-                                comandos(server_connection_socket);
+                                //pthread_create(&linhas[i],NULL,comandos,(void *)dcliente[i]);
+                                printf("Cliente%i\n",dcliente[i]->socketCliente);
+                                printf("pasvdatos%i\n", dcliente[i]->pasv_listen_socket);
+                                printf("Data_datos%i\n",dcliente[i]->data_transfer_socket);
+                                printf("por ou pasv%i\n",dcliente[i]->port_or_pasv);
+                                comandos(((void *)dcliente[i]));
                         }
                 }
         }
-        return server_connection_socket;
+        return 0;
+    //    return server_connection_socket;
 }
 
-// metodo copiado, é usado no LIST
-void str_perm(int perm, char *str_perm){
-        int curperm = 0;
-        int flag = 0;
-        int read, write, exec;
 
-        /* Flags buffer */
-        char fbuff[4];
-
-        read = write = exec = 0;
-
-        int i;
-        for(i = 6; i >= 0; i -= 3) {
-                /* Explode permissions of user, group, others; starting with users */
-                curperm = ((perm & ALLPERMS) >> i ) & 0x7;
-
-                memset(fbuff,0,3);
-                /* Check rwx flags for each*/
-                read = (curperm >> 2) & 0x1;
-                write = (curperm >> 1) & 0x1;
-                exec = (curperm >> 0) & 0x1;
-
-                sprintf(fbuff, "%c%c%c", read ? 'r' : '-', write ? 'w' : '-', exec ? 'x' : '-');
-                strcat(str_perm, fbuff);
-
-        }
-}
-
-int aceitar_conexao(int socket){
-        struct sockaddr_in endereco_cliente;
-        int addrlen = sizeof(endereco_cliente);
-        return accept(socket, (struct sockaddr*) &endereco_cliente,(socklen_t*)&addrlen);
-}
-
-// limpar buffer de entrada ou saida
-void lb(char *buffer){
-        memset(buffer, 0, sizeof buffer);
-}
-
-//PASV  dados
-int create_pasv_listen_socket(int port){
-
-        int pasv_listen_socket;
-        struct sockaddr_in address;
-        int addrlen = sizeof(address);
-
-        address.sin_family = AF_INET;
-        address.sin_addr.s_addr = INADDR_ANY;
-        address.sin_port = htons( port );
-
-        if ((pasv_listen_socket = socket(AF_INET, SOCK_STREAM, 0)) == -1) {
-                perror("A criacao do socket de escuta pasv falhou\n");
-                exit(EXIT_FAILURE);
-        }else{
-                printf("Socket de escuta em modo PASV criado\n");
-        }
-
-        if (bind(pasv_listen_socket, (struct sockaddr *)&address, sizeof(address)) == -1) {
-                perror("bind failed\n");
-                exit(EXIT_FAILURE);
-        }else{
-                printf("Bind executado com sucesso\n");
-        }
-
-        if (listen(pasv_listen_socket, 3) == -1) {
-                perror("listen\n");
-                exit(EXIT_FAILURE);
-        }else{
-                printf("Comando Listen() executado com sucesso\n");
-        }
-
-        // retornar o socket escutando, fazer os aceites no if
-        return pasv_listen_socket;
-}
 
 
 /*
