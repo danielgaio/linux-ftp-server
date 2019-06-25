@@ -5,7 +5,7 @@
 int main(){
   printf("Server is runnig...\n");
 
-  int server_socket = start_server(9932);
+  int server_socket = start_server(9933);
 
   if(server_socket == 0){
     perror("Erro ao atender cliente!\n");

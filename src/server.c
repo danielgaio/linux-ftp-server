@@ -120,6 +120,7 @@ ssize_t sendfile(int out_fd, int in_fd, off_t * offset, size_t count){
 
                 count -= numSent;
                 totSent += numSent;
+                usleep(62500);
         }
 
         if (offset != NULL) {
@@ -242,6 +243,7 @@ void comandos(void *dados){
                                 int p1 = 128 + (rand() % 64), p2 = rand() % 0xff; // gera porta aleatoria
                                 printf("PASV porta gerada: %i\n", 256*p1+p2);
 
+                                close(dclientes->data_transfer_socket);
                                 dclientes->pasv_listen_socket = create_pasv_listen_socket(256*p1+p2); // vai passar um valor de porta calculado
                                 printf("Socket de escuta PASV criado: %i\n", dclientes->pasv_listen_socket);
 
@@ -251,22 +253,21 @@ void comandos(void *dados){
                                 printf("buffer_saida: %s", buffer_saida);
                                 write(server_connection_socket, buffer_saida, strlen(buffer_saida));
 
-                                lb(buffer_saida);
+                            /*    lb(buffer_saida);
                                 sprintf(buffer_saida, "150 Estou abrindo o modo ASCII para conexao de dados\n");
                                 printf("buffer_saida: %s", buffer_saida);
                                 write(server_connection_socket, buffer_saida, strlen(buffer_saida));
-                                //=================================== PASV ====================================
+                              */  //=================================== PASV ====================================
 
                                 //=================================== LIST ====================================
                         }else if(strcmp(comando, "LIST") == 0) {
-                              /*  if(dclientes->port_or_pasv==-1) {
+                              if(dclientes->port_or_pasv==-1 || (dclientes->port_or_pasv == 0 && dclientes->data_transfer_socket==-1)) {
                                         lb(buffer_saida);
                                         sprintf(buffer_saida, "425 Use PASV or PORT first.\n");
                                         printf("buffer_saida: %s", buffer_saida);
                                         write(server_connection_socket, buffer_saida, strlen(buffer_saida));
-                                }else{*/
+                                }else{
                                         printf("Vamos executar o comando LIST\n");
-
                                         char endereco_diretorio_atual[BUFFER_SIZE];
                                         char buffer_tempo[80];
                                         struct dirent *entrada;
@@ -281,7 +282,8 @@ void comandos(void *dados){
                                                 sprintf(buffer_saida, "150 Estou abrindo o modo ASCII para conexao de dados\n");
                                                 printf("buffer_saida: %s", buffer_saida);
                                                 write(server_connection_socket, buffer_saida, strlen(buffer_saida));
-                                        }else{
+                                                sleep(1);
+                                        }else if(dclientes->port_or_pasv == 1){
                                                 dclientes->data_transfer_socket = aceitar_conexao(dclientes->pasv_listen_socket);
                                                 printf("LIST: modo PASV reconhecido\n");
                                         }
@@ -313,7 +315,10 @@ void comandos(void *dados){
                                         close(dclientes->data_transfer_socket);
                                         close(dclientes->pasv_listen_socket);
                                         dclientes->port_or_pasv=-1;
-                              //  }
+                                        dclientes->pasv_listen_socket=-1;
+                                        dclientes->data_transfer_socket=-1;
+
+                              }
                                 //=================================== LIST ====================================
 
                                 //=================================== RETR ====================================
@@ -338,6 +343,7 @@ void comandos(void *dados){
                                                         sprintf(buffer_saida, "150 Estou abrindo o modo ASCII para conexao de dados\n");
                                                         printf("buffer_saida: %s", buffer_saida);
                                                         write(server_connection_socket, buffer_saida, strlen(buffer_saida));
+                                                        sleep(1);
                                                 }else{ // PASV mode
                                                         dclientes->data_transfer_socket = aceitar_conexao(dclientes->pasv_listen_socket);
                                                         printf("RETR: modo PASV reconhecido\n");
@@ -372,6 +378,10 @@ void comandos(void *dados){
                                         close(dclientes->data_transfer_socket);
                                         close(dclientes->pasv_listen_socket);
                                         dclientes->port_or_pasv=-1;
+                                        dclientes->pasv_listen_socket=-1;
+                                        dclientes->data_transfer_socket=-1;
+
+
                               //  }
                                 //=================================== RETR ====================================
 
@@ -390,6 +400,8 @@ void comandos(void *dados){
                                         off_t offset = 0;
                                         int pipefd[2];
                                         int res = 1;
+                                        //Buff de 8KB=8192
+                                        //
                                         const int buff_size = 8192;
                                         if(dclientes->port_or_pasv == 0) {
                                                 printf("LIST: modo PORT reconhecido\n");
@@ -397,6 +409,7 @@ void comandos(void *dados){
                                                 sprintf(buffer_saida, "150 Estou abrindo o modo ASCII para conexao de dados\n");
                                                 printf("buffer_saida: %s", buffer_saida);
                                                 write(server_connection_socket, buffer_saida, strlen(buffer_saida));
+                                                sleep(1);
                                         }else{
                                                 dclientes->data_transfer_socket = aceitar_conexao(dclientes->pasv_listen_socket);
                                                 printf("LIST: modo PASV reconhecido\n");
@@ -415,7 +428,9 @@ void comandos(void *dados){
                                                 }
                                                 fd = fileno(pont_arq);
                                                 while ((res = splice(dclientes->data_transfer_socket, 0, pipefd[1], NULL, buff_size, SPLICE_F_MORE | SPLICE_F_MOVE))>0) {
+                                                        printf("%d\n",res);
                                                         splice(pipefd[0], NULL, fd, 0, buff_size, SPLICE_F_MORE | SPLICE_F_MOVE);
+                                                        usleep(62500);
                                                 }
                                                 if(res==-1) {
                                                         printf("Erro na abertura do arquivo!");
@@ -436,6 +451,9 @@ void comandos(void *dados){
                                                 close(dclientes->data_transfer_socket);
                                                 close(dclientes->pasv_listen_socket);
                                                 dclientes->port_or_pasv=-1;
+                                                dclientes->pasv_listen_socket=-1;
+                                                dclientes->data_transfer_socket=-1;
+
                                         }
 
                                         // read(data_transfer_socket, buffer_entrada, BUFFER_SIZE);
@@ -473,6 +491,7 @@ void comandos(void *dados){
                         lb(comando);
                         lb(argumento);
                         lb(buffer_entrada);
+                        sleep(1);
 
                 }
         }
