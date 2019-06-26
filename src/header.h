@@ -17,8 +17,8 @@
 //struct sockaddr_in address;
 
 struct dadosConecao{
-  int socketCliente;    //
- int pasv_listen_socket, data_transfer_socket;    //socket dados
+  int socketCliente;
+  int pasv_listen_socket, data_transfer_socket;    //socket dados
   int port_or_pasv;    // flag para o modo de execução, port = 0, pasv = 1
 };
 
