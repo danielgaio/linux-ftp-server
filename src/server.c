@@ -3,17 +3,12 @@
 #define O_RDONLY 00
 #define O_WRONLY 01
 #define O_RDWR 02
-<<<<<<< HEAD
-// ====================== ENVIO ARQUIVO ========================
-// função copiada de outro projeto: //https://github.com/Siim/ftp
-=======
->>>>>>> master
-#ifndef sendfile
-#define BUF_SIZE 8192
 #include <fcntl.h>
 
 // ====================== ENVIO ARQUIVO ========================
-// função copiada de outro projeto
+// função copiada de outro projeto: //https://github.com/Siim/ftp
+#ifndef sendfile
+#define BUF_SIZE 8192
 
 // metodo copiado, é usado no LIST
 void str_perm(int perm, char *str_perm){
@@ -143,6 +138,7 @@ ssize_t sendfile(int out_fd, int in_fd, off_t * offset, size_t count){
 }
 #endif
 // ====================== ENVIO ARQUIVO ========================
+
 //=========================Comandos ==========================
 //void comandos(void * tmp){
 void comandos(void *dados){
