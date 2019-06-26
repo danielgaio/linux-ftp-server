@@ -26,6 +26,6 @@ void lb(char *buffer);
 int create_pasv_listen_socket(int port);
 int aceitar_conexao(int socket);
 void str_perm(int perm, char *str_perm);
-void * comandos(void * dclientes);
+void *comandos(void * dclientes);
 
 int start_server(int port);
