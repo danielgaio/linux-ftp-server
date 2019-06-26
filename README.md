@@ -6,7 +6,9 @@ Software produced by:
 
 Do uso do servidor
 Compilação:  <br>
-gcc main.c header.h server.c -o server <br>
+
+gcc -lpthread -D_GNU_SOURCE  main.c header.h server.c -o server <br>
+<!--gcc main.c header.h server.c -o server <br> -->
 Execução:
 ./server (ou: sudo ./server)
 
