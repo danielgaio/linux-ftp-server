@@ -1,9 +1,9 @@
 #include "header.h"
 #include <errno.h>
+#include <fcntl.h>
 #define O_RDONLY 00
 #define O_WRONLY 01
 #define O_RDWR 02
-#include <fcntl.h>
 
 // ====================== ENVIO ARQUIVO ========================
 // função copiada de outro projeto: //https://github.com/Siim/ftp
@@ -386,7 +386,7 @@ void *comandos(void *dados){
                                 //=================================== STOR ====================================
                         }else if(strcmp(comando, "STOR") == 0) {
 
-                                printf(argumento);
+                                printf("%s", argumento);
                                 printf("Iniciando execucao de STOR\n");
                                 int connection, fd;
                                 off_t offset = 0;
@@ -482,7 +482,7 @@ void *comandos(void *dados){
 
                 }
         }
-
+        return 0;
 }
 
 

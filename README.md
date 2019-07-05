@@ -7,14 +7,16 @@ Software produced by:
 Do uso do servidor
 Compilação:  <br>
 
-gcc -lpthread -D_GNU_SOURCE  main.c header.h server.c -o server <br>
-<!--gcc main.c header.h server.c -o server <br> -->
+g++ -lpthread -pthread -D_GNU_SOURCE  main.c header.h server.c -o server <br>
+
 Execução:
 ./server (ou: sudo ./server)
 
 Do uso de cliente
 No terminal digite (com o servidor já em execução):
-ftp localhost
+ftp localhost 9933
+
+Sendo que 9933 é o número da porta em que o servidor esta "ouvindo".
 
 “Este projeto foi desenvolvido integralmente pela equipe, sem ajuda não autorizada de alunos não membros do projeto no processo de codificação”
 

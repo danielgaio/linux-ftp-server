@@ -1,4 +1,4 @@
-// g++ -lpthread -D_GNU_SOURCE  main.c header.h server.c -o main
+// g++ -lpthread -pthread -D_GNU_SOURCE  main.c header.h server.c -o main
 
 #include "header.h"
 
